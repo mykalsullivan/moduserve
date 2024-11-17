@@ -1,0 +1,45 @@
+### Types of Commands (from client) ###
+- CONNECT <client> <protocol> <should register>     : Connect to the server
+- KEEPALIVE                                         : Keepalive
+- SAY <message>                                     : Send chat message to server
+- SAY_TO <user> <message>                           : Send a message directly to a user
+- EXECUTE <command> <params>                        : Execute custom server command
+- HELP                                              : Return help menu with commands from the server
+
+### Types of Commands (from admin client) ###
+- ADMIN <client> <protocol> <log mode>              : Connect to the server (admin mode)
+
+### Types of Commands (from server) ###
+- DISCONNECT <reason>           : Kicks a client from the server and provides a reason why
+- USERSYNC                      : Syncs user information on the client
+- UPDATE                        : Announce to the client an update is available
+
+### CONNECT ###
+{
+    CONNECT <client> <protocol> <should register>
+
+    Possible responses from server:
+        000 Send credentials
+        001 Mismatched protocol version
+        002 Update client
+        003 Downgrade client
+        004 Server full
+}
+
+### ADMIN ###
+{
+    ADMIN <client> <protocol>
+
+    Connect as a server admin; will need an admin client (or something)
+
+    Possible responses from server:
+
+}
+
+### 3. Command Execution ###
+{
+
+}
+
+### Handling custom commands ###
+-
