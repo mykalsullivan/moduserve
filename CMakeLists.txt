@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.25)
-project(SocketPracticeServer)
+project(ChatApplication)
 
 set(CMAKE_CXX_STANDARD 23)
 
@@ -11,7 +11,7 @@ find_package(OpenSSL REQUIRED)
 include_directories(${PQXX_INCLUDE_DIRS})
 link_directories(${PQXX_LIBRARY_DIRS})
 
-add_executable(PracticeServer
+add_executable(ChatApplicationServer
         src/server/main.cpp
         src/server/Server.cpp
         src/server/Server.h
@@ -37,13 +37,13 @@ add_executable(PracticeServer
         src/server/AdminPrompt.cpp
 )
 
-target_link_libraries(PracticeServer
+target_link_libraries(ChatApplicationServer
         ${PQXX_LIBRARIES}
         OpenSSL::Crypto
         OpenSSL::SSL
 )
 
-add_executable(PracticeClient
+add_executable(ChatApplicationClient
         src/client/main.cpp
         src/client/Client.cpp
         src/Connection.cpp
