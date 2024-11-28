@@ -5,7 +5,6 @@
 #pragma once
 #include <string>
 #include <netinet/in.h>
-#include <poll.h>
 #include <chrono>
 
 class Connection {
@@ -34,6 +33,6 @@ public:
     [[nodiscard]] std::string receiveMessage();
 
     [[nodiscard]] bool isValid() const;
-    [[nodiscard]] bool isInactive() const;
+    [[nodiscard]] bool isInactive(int timeout) const;
     void updateLastActivityTime();
 };

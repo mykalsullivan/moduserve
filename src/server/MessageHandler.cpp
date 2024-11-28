@@ -9,20 +9,22 @@
 
 #define LOG(logLevel, message) Logger::instance().logMessage(logLevel, message);
 
-MessageHandler::MessageHandler(Server &server) : m_Server(server), m_Running(true)
+MessageHandler::MessageHandler(Server &server) : m_Server(server)
 {
     Logger::instance().logMessage(LogLevel::DEBUG, "Started message handler");
     m_MessageProcessingThread = std::thread([this]() {
         Logger::instance().logMessage(LogLevel::DEBUG, "(MessageHandler) Started message processing thread");
 
-        while (m_Running)
+        while (m_Server.isRunning())
         {
             std::pair<Connection *, std::string> message;
             {
                 std::unique_lock lock(m_Server.connectionManager().getMessageQueueMutex());
-                m_Server.connectionManager().getCV().wait(lock, [this] { return !m_Server.connectionManager().getMessageQueue().empty(); }); // This is causing the MessageHandler to never stop since it is blocking
+                m_Server.connectionManager().getCV().wait(lock, [this] {
+                    return !m_Server.connectionManager().getMessageQueue().empty();
+                }); // This is causing the MessageHandler to never stop since it is blocking
 
-                if (!m_Running) break;
+                if (!m_Server.isRunning()) break;
 
                 message = m_Server.connectionManager().getMessageQueue().front();
                 m_Server.connectionManager().getMessageQueue().pop();
@@ -35,15 +37,10 @@ MessageHandler::MessageHandler(Server &server) : m_Server(server), m_Running(tru
 
 MessageHandler::~MessageHandler()
 {
-    Logger::instance().logMessage(LogLevel::DEBUG, "Stopped message handler");
-}
-
-void MessageHandler::stop()
-{
     Logger::instance().logMessage(LogLevel::DEBUG, "Stopping message handler...");
-    m_Running = false;
     if (m_MessageProcessingThread.joinable())
         m_MessageProcessingThread.join();
+    Logger::instance().logMessage(LogLevel::DEBUG, "Stopped message handler");
 }
 
 // This will need to do other stuff in the future
@@ -63,11 +60,17 @@ void MessageHandler::handleMessage(Connection *sender, const std::string &messag
 // This will eventually pass messages into a dedicated message processor/parser
 void MessageHandler::parseMessage(Connection *sender, const std::string &message)
 {
-    if (message == "/quit") {
+    if (message == "/quit")
+    {
         // Handle client quit logic here...
         //Logger::instance().logMessage(LogLevel::INFO, "Client " + std::to_string(sender->getSocket()) + " has quit.");
         m_Server.connectionManager().removeConnection(sender->getSocket());
-    } else {
+
+    }
+    else if (message == "/stop")
+        m_Server.stop();
+    else
+    {
         //Logger::instance().logMessage(LogLevel::INFO, "Received message: \"" + message + "\" from client " + std::to_string(sender->getSocket()));
         broadcastMessage(sender, message);
     }

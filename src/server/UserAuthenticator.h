@@ -7,6 +7,7 @@
 #include "Server.h"
 #include <string>
 #include <mutex>
+#include <condition_variable>
 #include <pqxx/pqxx>
 
 class UserAuthenticator {
@@ -18,7 +19,6 @@ private:
     Server &m_Server;
 
     pqxx::connection *m_DatabaseConnection;
-    std::mutex m_AuthenticatorServiceMutex;
 
 public:
     bool sync();

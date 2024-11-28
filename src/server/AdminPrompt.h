@@ -2,7 +2,14 @@
 // Created by msullivan on 11/16/24.
 //
 
-#ifndef ADMINPROMPT_H
-#define ADMINPROMPT_H
+#pragma once
 
-#endif //ADMINPROMPT_H
+class AdminPrompt {
+public:
+    AdminPrompt();
+    ~AdminPrompt() = default;
+
+private:
+
+
+};

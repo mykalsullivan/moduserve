@@ -57,7 +57,8 @@ int Connection::getPort() const {
 
 void Connection::setNonBlocking() const
 {
-    if (m_SocketFD == -1) {
+    if (m_SocketFD == -1)
+    {
         Logger::instance().logMessage(LogLevel::ERROR, "Socket is invalid");
         return;
     }
@@ -70,7 +71,8 @@ void Connection::setNonBlocking() const
     }
 
     // Set the socket to non-blocking mode
-    if (fcntl(m_SocketFD, F_SETFL, flags | O_NONBLOCK) == -1) {
+    if (fcntl(m_SocketFD, F_SETFL, flags | O_NONBLOCK) == -1)
+    {
         Logger::instance().logMessage(LogLevel::ERROR, "Failed to set socket to non-blocking mode: " + std::to_string(errno));
         return;
     }
@@ -144,11 +146,10 @@ bool Connection::isValid() const
 }
 
 
-bool Connection::isInactive() const
+bool Connection::isInactive(int timeout) const
 {
     auto currentTime = std::chrono::steady_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::seconds>(currentTime - m_LastActivityTime);
-    return duration.count() > 60; // Inactive if no activity in the last 60 seconds
+    return (currentTime - m_LastActivityTime) > std::chrono::seconds(timeout);
 }
 
 void Connection::updateLastActivityTime()

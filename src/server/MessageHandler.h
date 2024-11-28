@@ -21,13 +21,10 @@ public:
 private:
     Server &m_Server;
 
-    std::atomic<bool> m_Running;
     std::thread m_MessageProcessingThread;
     std::mutex m_MessageProcessingMutex;
 
 public:
-    void stop();
-
     void handleMessage(Connection *sender, const std::string &message);
     void broadcastMessage(Connection *sender, const std::string &message);
 

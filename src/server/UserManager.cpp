@@ -4,6 +4,7 @@
 
 #include "UserManager.h"
 #include "Server.h"
+#include "UserAuthenticator.h"
 
 UserManager::UserManager(Server &server) : m_Server(server)
 {}

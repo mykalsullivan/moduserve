@@ -4,6 +4,7 @@
 
 #pragma once
 #include <atomic>
+#include <condition_variable>
 
 // Forward declarations
 class ConnectionManager;
@@ -19,6 +20,8 @@ public:
 
 private:
     std::atomic<bool> m_Running;
+    std::mutex m_Mutex;
+    std::condition_variable m_CV;
 
     ConnectionManager *m_ConnectionManager;
     UserAuthenticator *m_UserAuthenticator;
@@ -26,6 +29,7 @@ private:
     MessageHandler *m_MessageHandler;
 
 public:
+    int run();
     void stop();
 
     [[nodiscard]] ConnectionManager &connectionManager() const { return *m_ConnectionManager; }
@@ -33,13 +37,10 @@ public:
     [[nodiscard]] UserManager &userManager() const { return *m_UserManager; }
     [[nodiscard]] MessageHandler &messageHandler() const { return *m_MessageHandler; }
 
-private:
-    // Client management
-    void acceptClient();
-    bool authenticateClient(Connection &client);
+    [[nodiscard]] std::condition_variable &getCV() { return m_CV; }
+    [[nodiscard]] bool isRunning() { return m_Running; }
 
-    // User input
-    void handleUserInput();
+private:
 
     // Command stuff
     void purgeClients();

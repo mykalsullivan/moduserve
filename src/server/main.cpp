@@ -31,4 +31,5 @@ int main(int argc, char *argv[])
         }
     }
     Server server(port, argc, argv);
+    return server.run();
 }

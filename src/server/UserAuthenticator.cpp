@@ -26,8 +26,7 @@ UserAuthenticator::UserAuthenticator(Server &server) : m_Server(server)
 
 UserAuthenticator::~UserAuthenticator()
 {
-    if (m_DatabaseConnection != nullptr)
-        delete m_DatabaseConnection;
+    delete m_DatabaseConnection;
 }
 
 bool UserAuthenticator::authenticate(const std::string &username, const std::string &password)

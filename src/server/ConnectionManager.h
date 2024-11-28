@@ -13,6 +13,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <atomic>
+#include <poll.h>
 
 // Forward declaration(s)
 class Server;
@@ -30,19 +31,16 @@ private:
     std::vector<pollfd> m_PollFDs;
     mutable std::mutex m_ConnectionMutex;
 
-    std::atomic<bool> m_Running;
-    std::thread m_ConnectionAcceptorThread;
     std::thread m_ConnectionHandlerThread;
     std::thread m_ConnectionTimeoutThread;
-    mutable std::mutex m_ThreadMutex;
+    mutable std::mutex m_ConnectionTimeoutMutex;
+    mutable std::condition_variable m_ConnectionTimeoutCV;
 
     std::queue<std::pair<Connection *, std::string>> m_MessageQueue;
     std::mutex m_MessageQueueMutex;
     std::condition_variable m_MessageQueueCV;
 
 public:
-    void stop();
-
     size_t size() const;
     bool empty() const;
     std::unordered_map<int, Connection *>::iterator begin();

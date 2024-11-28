@@ -4,7 +4,6 @@
 
 #pragma once
 #include "../User.h"
-#include "UserAuthenticator.h"
 #include <string>
 #include <unordered_map>
 #include <mutex>
