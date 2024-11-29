@@ -4,9 +4,6 @@
 
 #pragma once
 #include <string>
-#include <queue>
-#include <thread>
-#include <mutex>
 
 enum class LogLevel {
     DEBUG,
@@ -17,14 +14,10 @@ enum class LogLevel {
 
 class Logger {
 public:
-    Logger();
-    ~Logger();
+    Logger() = default;
+    ~Logger() = default;
 
 private:
-    bool m_Running;
-    std::queue<std::string> m_LogQueue;
-    std::thread m_LogThread;
-    std::mutex m_LogQueueMutex;
 
     [[nodiscard]] std::string getCurrentTimestamp() const;
     [[nodiscard]] std::string logLevelToString(LogLevel level) const;
@@ -32,7 +25,6 @@ private:
 public:
     static Logger &instance();
     void logMessage(LogLevel level, const std::string &message);
-
-private:
-    void logThreadFunction();
 };
+
+#define LOG(logLevel, message) Logger::instance().logMessage(logLevel, message);

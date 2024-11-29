@@ -8,7 +8,7 @@
 #include "UserAuthenticator.h"
 #include "UserManager.h"
 #include "MessageHandler.h"
-#include "Logger.h"
+#include "../Logger.h"
 #include <iostream>
 
 int port = 0;

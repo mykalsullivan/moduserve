@@ -26,7 +26,6 @@ public:
     [[nodiscard]] std::string getIP() const;
     [[nodiscard]] int getPort() const;
 
-    void setNonBlocking() const;
     void enableKeepalive() const;
 
     [[nodiscard]] bool sendMessage(const std::string &message) const;

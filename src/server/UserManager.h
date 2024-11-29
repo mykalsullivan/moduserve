@@ -27,10 +27,10 @@ public:
     User *getUser(int connectionID);
     User *operator[](int connectionID);
 
-    [[nodiscard]] size_t size() const;
-    [[nodiscard]] bool empty() const;
-    [[nodiscard]] auto begin();
-    [[nodiscard]] auto end();
+    [[nodiscard]] size_t size() const { return m_Users.size(); }
+    [[nodiscard]] bool empty() const { return m_Users.empty(); }
+    [[nodiscard]] auto begin() { return m_Users.begin(); }
+    [[nodiscard]] auto end() { return m_Users.end(); }
 
     [[nodiscard]] bool authenticateConnection(int connectionID, const std::string &username, const std::string &password);
 };

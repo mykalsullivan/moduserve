@@ -3,7 +3,7 @@
 //
 
 #include "UserAuthenticator.h"
-#include "Logger.h"
+#include "../Logger.h"
 #include <iomanip>
 #include <openssl/sha.h>
 
@@ -37,17 +37,20 @@ UserAuthenticator::~UserAuthenticator()
 
 bool UserAuthenticator::authenticate(const std::string &username, const std::string &password)
 {
-    if (m_DatabaseConnection == nullptr) {
+    if (m_DatabaseConnection == nullptr)
+    {
         LOG(LogLevel::ERROR, "Database connection is not established.");
         return false;
     }
 
-    try {
+    try
+    {
         pqxx::work transaction(*m_DatabaseConnection);
         std::string query = "SELECT password_hash FROM users WHERE username = " + transaction.quote(username) + " LIMIT 1;";
         pqxx::result result = transaction.exec(query);
 
-        if (result.empty()) {
+        if (result.empty())
+        {
             LOG(LogLevel::WARNING, "\"" + username + "\" could not be found in the database");
             return false;
         }
@@ -55,12 +58,13 @@ bool UserAuthenticator::authenticate(const std::string &username, const std::str
         auto storedHash = result[0]["password_hash"].as<std::string>();
         std::string hashedPassword = hashPassword(password);
 
-        if (storedHash == hashedPassword) {
+        if (storedHash == hashedPassword)
             return true; // Authentication successful
-        }
 
         LOG(LogLevel::WARNING, "\"" + username + "\" provided an incorrect password");
-    } catch (const std::exception &e) {
+    }
+    catch (const std::exception &e)
+    {
         LOG(LogLevel::ERROR, "Error during authentication: " + std::string(e.what()));
     }
     return false;
@@ -97,8 +101,7 @@ std::string UserAuthenticator::hashPassword(const std::string &password)
     SHA256_Final(hash, &sha256_ctx);
 
     std::ostringstream oss;
-    for (int i = 0; i < SHA256_DIGEST_LENGTH; ++i) {
-        oss << std::hex << std::setw(2) << std::setfill('0') << (int)hash[i];
-    }
+    for (unsigned char i : hash)
+        oss << std::hex << std::setw(2) << std::setfill('0') << (int) i;
     return oss.str();
 }

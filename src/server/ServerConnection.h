@@ -8,7 +8,7 @@
 class ServerConnection : public Connection {
 public:
     ServerConnection() = default;
-    ~ServerConnection() override = default;
+    ~ServerConnection() override;
 
     bool createAddress(int port);
     bool bindAddress();

@@ -22,11 +22,12 @@ bool UserManager::addUser(int socketID, User *user)
 {
     std::lock_guard lock(m_UserMutex);
 
-    if (m_Users.find(socketID) != m_Users.end()) {
-        return false; // User already exists
+    if (m_Users.find(socketID) == m_Users.end())
+    {
+        m_Users[socketID] = user;
+        return true;
     }
-    m_Users[socketID] = user;
-    return true;
+    return false; // User already exists
 }
 
 bool UserManager::removeUser(int socketID)
@@ -34,9 +35,8 @@ bool UserManager::removeUser(int socketID)
     std::lock_guard lock(m_UserMutex);
 
     auto it = m_Users.find(socketID);
-    if (it == m_Users.end()) {
+    if (it == m_Users.end())
         return false; // User not found
-    }
     delete it->second;  // Clean up the user
     m_Users.erase(it);
     return true;
@@ -45,47 +45,13 @@ bool UserManager::removeUser(int socketID)
 User *UserManager::getUser(int socketID)
 {
     std::lock_guard lock(m_UserMutex);
-
     auto it = m_Users.find(socketID);
-    if (it != m_Users.end()) {
-        return it->second;
-    }
-    return nullptr;
+    return (it != m_Users.end()) ? it->second : nullptr;
 }
 
 User *UserManager::operator[](int socketID)
 {
-    std::lock_guard lock(m_UserMutex);
-
-    auto it = m_Users.find(socketID);
-    if (it != m_Users.end()) {
-        return it->second;
-    }
-    return nullptr;
-}
-
-size_t UserManager::size() const
-{
-    std::lock_guard lock(m_UserMutex);
-    return m_Users.size();
-}
-
-bool UserManager::empty() const
-{
-    std::lock_guard lock(m_UserMutex);
-    return m_Users.empty();
-}
-
-auto UserManager::begin()
-{
-    std::lock_guard lock(m_UserMutex);
-    return m_Users.begin();
-}
-
-auto UserManager::end()
-{
-    std::lock_guard lock(m_UserMutex);
-    return m_Users.end();
+    return getUser(socketID);
 }
 
 // Make this work with an individual connection

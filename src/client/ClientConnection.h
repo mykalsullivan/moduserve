@@ -9,7 +9,7 @@
 
 class ClientConnection : public Connection {
 public:
-    ClientConnection();
+    ClientConnection() = default;
     ~ClientConnection() override;
 
 private:
