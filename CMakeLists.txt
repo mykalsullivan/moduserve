@@ -21,7 +21,6 @@ add_executable(ChatApplicationServer
         src/server/ConnectionManager.cpp
         src/server/UserManager.cpp
         src/server/UserAuthenticator.cpp
-        src/server/AdminPrompt.cpp
         src/User.cpp
         src/Connection.cpp
         src/Logger.cpp
