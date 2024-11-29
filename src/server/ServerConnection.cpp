@@ -9,12 +9,12 @@
 
 ServerConnection::~ServerConnection()
 {
-    shutdown(m_SocketFD, SHUT_RDWR);
+    shutdown(m_FD, SHUT_RDWR);
 
-    if (m_SocketFD != -1)
+    if (m_FD != -1)
     {
-        close(m_SocketFD);
-        m_SocketFD = -1;
+        close(m_FD);
+        m_FD = -1;
     }
 }
 
@@ -29,27 +29,27 @@ bool ServerConnection::createAddress(int port)
 
 bool ServerConnection::bindAddress()
 {
-    if (bind(m_SocketFD, reinterpret_cast<sockaddr *>(&m_Address), sizeof(m_Address)) >= 0) return true;
+    if (bind(m_FD, reinterpret_cast<sockaddr *>(&m_Address), sizeof(m_Address)) >= 0) return true;
     return false;
 }
 
 bool ServerConnection::startListening()
 {
-    if (listen(m_SocketFD, 5) >= 0) return true;
+    if (listen(m_FD, 5) >= 0) return true;
     return false;
 }
 
-bool ServerConnection::acceptClient(Connection &client)
+Connection *ServerConnection::acceptClient()
 {
-    auto clientSocketAddress = reinterpret_cast<sockaddr *>(client.getSocket());
-    ssize_t addressLength = sizeof(client);
+    sockaddr_in clientAddress {};
+    socklen_t clientAddressLength = sizeof(clientAddress);
+    int clientFD = accept(m_FD, reinterpret_cast<sockaddr *>(&clientAddress), &clientAddressLength);
+    if (clientFD < 0) return nullptr;
 
-    int clientSocket = accept(m_SocketFD, clientSocketAddress, reinterpret_cast<socklen_t *>(&addressLength));
-    if (clientSocket >= 0)
-    {
-        client.setSocket(clientSocket);
-        client.setAddress(m_Address);
-        return true;
-    }
-    return false;
+    auto client = new Connection();
+    client->setSocket(clientFD);
+    client->setAddress(clientAddress);
+    client->enableKeepalive();
+
+    return client;
 }

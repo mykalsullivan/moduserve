@@ -5,11 +5,12 @@ set(CMAKE_CXX_STANDARD 23)
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(PQXX REQUIRED libpqxx)
-
 find_package(OpenSSL REQUIRED)
 
 include_directories(${PQXX_INCLUDE_DIRS})
 link_directories(${PQXX_LIBRARY_DIRS})
+
+add_compile_options(-Wall -Wextra -O5)
 
 add_executable(ChatApplicationServer
         src/server/main.cpp
@@ -24,6 +25,8 @@ add_executable(ChatApplicationServer
         src/User.cpp
         src/Connection.cpp
         src/Logger.cpp
+        src/server/BroadcastManager.h
+        src/server/BroadcastManager.cpp
 )
 
 target_link_libraries(ChatApplicationServer

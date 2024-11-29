@@ -87,10 +87,11 @@ ServerConnection *init(int argc, char **argv)
 }
 
 Server::Server(int argc, char **argv) : m_Running(true),
-                                        m_ConnectionManager(*this, init(argc, argv)),
+                                        m_ConnectionManager(*this, *init(argc, argv)),
                                         m_MessageHandler(*this),
-                                        m_UserAuthenticator(*this),
-                                        m_UserManager(*this)
+                                        m_BroadcastManager(*this),
+                                        m_UserManager(*this),
+                                        m_UserAuthenticator(*this)
 {}
 
 int Server::run()

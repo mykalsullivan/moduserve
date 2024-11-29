@@ -115,7 +115,7 @@ bool Client::authenticate()
 
 bool Client::sendMessage(const std::string &message) const {
     if (m_Connection != nullptr)
-        return m_Connection->sendMessage(message);
+        return m_Connection->sendData(message);
     return false;
 }
 

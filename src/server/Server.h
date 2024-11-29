@@ -4,17 +4,19 @@
 
 #pragma once
 #include "ConnectionManager.h"
-#include "UserAuthenticator.h"
-#include "UserManager.h"
 #include "MessageHandler.h"
+#include "BroadcastManager.h"
+#include "UserManager.h"
+#include "UserAuthenticator.h"
 #include <atomic>
 #include <condition_variable>
 
 class Server {
     friend class ConnectionManager;
+    friend class MessageHandler;
+    friend class BroadcastManager;
     friend class UserManager;
     friend class UserAuthenticator;
-    friend class MessageHandler;
 public:
     explicit Server(int argc, char *argv[]);
     ~Server() = default;
@@ -25,9 +27,10 @@ private:
     std::condition_variable m_CV;
 
     ConnectionManager m_ConnectionManager;
-    UserAuthenticator m_UserAuthenticator;
-    UserManager m_UserManager;
     MessageHandler m_MessageHandler;
+    BroadcastManager m_BroadcastManager;
+    UserManager m_UserManager;
+    UserAuthenticator m_UserAuthenticator;
 
 public:
     int run();

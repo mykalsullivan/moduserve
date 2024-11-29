@@ -8,50 +8,51 @@
 #include <fcntl.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <poll.h>
 
 Connection::Connection()
-    : m_SocketFD(-1), m_Address()
+    : m_FD(-1), m_Address()
 {
     memset(&m_Address, 0, sizeof(m_Address));
 }
 
 Connection::~Connection()
 {
-    shutdown(m_SocketFD, SHUT_RDWR);
+    shutdown(m_FD, SHUT_RDWR);
 
-    if (m_SocketFD != -1)
+    if (m_FD != -1)
     {
-        close(m_SocketFD);
-        m_SocketFD = -1;
+        close(m_FD);
+        m_FD = -1;
     }
 }
 
 bool Connection::createSocket()
 {
-    m_SocketFD = socket(AF_INET, SOCK_STREAM, 0);
-    if (m_SocketFD >= 0)
+    m_FD = socket(AF_INET, SOCK_STREAM, 0);
+    if (m_FD >= 0)
     {
         // Set to non-blocking mode, then return true if that works
-        int flags = fcntl(m_SocketFD, F_GETFL, 0);
+        int flags = fcntl(m_FD, F_GETFL, 0);
         if (flags == -1)
         {
             LOG(LogLevel::ERROR, "Failed to get socket flags");
             return false;
         }
-        if (fcntl(m_SocketFD, F_SETFL, flags | O_NONBLOCK) == -1)
+        if (fcntl(m_FD, F_SETFL, flags | O_NONBLOCK) == -1)
         {
             LOG(LogLevel::ERROR, "Failed to to set socket to non-blocking mode");
             return false;
         }
         return true;
     }
-    LOG(LogLevel::ERROR, m_SocketFD + ": Socket creation failed");
+    LOG(LogLevel::ERROR, m_FD + ": Socket creation failed");
     return false;
 }
 
 void Connection::setSocket(int fd)
 {
-    m_SocketFD = fd;
+    m_FD = fd;
 }
 
 void Connection::setAddress(sockaddr_in address)
@@ -72,18 +73,19 @@ int Connection::getPort() const {
 void Connection::enableKeepalive() const
 {
     int enableKeepalive = 1;
-    setsockopt(m_SocketFD, SOL_SOCKET, SO_KEEPALIVE, &enableKeepalive, sizeof(enableKeepalive));
-    LOG(LogLevel::DEBUG, "Keepalive enabled on connection " + m_SocketFD);
+    setsockopt(m_FD, SOL_SOCKET, SO_KEEPALIVE, &enableKeepalive, sizeof(enableKeepalive));
 }
 
 
-bool Connection::sendMessage(const std::string &message) const
+bool Connection::sendData(const std::string &data) const
 {
     //LOG(LogLevel::DEBUG, "Attempting to send message: " + message);
-    if (m_SocketFD != -1 && !message.empty()) {
-        ssize_t bytesSent = send(m_SocketFD, message.c_str(), message.length(), 0);
+    if (m_FD != -1 && !data.empty())
+    {
+        ssize_t bytesSent = send(m_FD, data.c_str(), data.length(), 0);
 
-        if (bytesSent == -1) {
+        if (bytesSent == -1)
+        {
             //LOG(LogLevel::ERROR, "Error sending message: " + std::string(strerror(errno)));
             return false;
         }
@@ -94,23 +96,23 @@ bool Connection::sendMessage(const std::string &message) const
     return false;
 }
 
-std::string Connection::receiveMessage()
+std::string Connection::receiveData()
 {
-    char buffer[1024] {};
-    ssize_t bytesReceived = recv(m_SocketFD, buffer, sizeof(buffer), 0);
+    // Check if there is pending data and return if no data is available
+    if (!hasPendingData()) return "";
 
-    // Handle the data where the connection was reset or closed
-    if (bytesReceived == 0)
+    char buffer[1024] {};
+    ssize_t bytesReceived = recv(m_FD, buffer, sizeof(buffer), 0);
+
+    // Handle errors
+    if (bytesReceived <= 0)
     {
-        LOG(LogLevel::INFO, "Connection closed by peer");
+        if (bytesReceived == 0)
+            LOG(LogLevel::INFO, "Connection closed by peer")
+        else
+            LOG(LogLevel::ERROR, "Error receiving data on connection")
         return "";
     }
-    if (bytesReceived < 0)
-    {
-        LOG(LogLevel::ERROR, "Error receiving data on connection");
-        return "";
-    }
-    //LOG(LogLevel::INFO, "(receiveMessage()) received: " + std::string(buffer, bytesReceived));
 
     updateLastActivityTime();
     return std::string(buffer, bytesReceived); // Create string from buffer
@@ -118,8 +120,11 @@ std::string Connection::receiveMessage()
 
 bool Connection::isValid() const
 {
-    char buffer;
-    ssize_t result = recv(m_SocketFD, &buffer, 1, MSG_PEEK);
+    // Check if there is pending data and return if no data is available
+    if (!hasPendingData()) return true;
+
+    char buffer[1] {};
+    ssize_t result = recv(m_FD, buffer, sizeof(buffer), MSG_PEEK);
 
     if (result < 0)
     {
@@ -134,8 +139,19 @@ bool Connection::isValid() const
     }
     // Connection was closed by the other side
     if (result == 0) return false;
-
     return true;
+}
+
+bool Connection::hasPendingData() const
+{
+    pollfd pfd { m_FD, POLLIN, 0 };
+    int result = poll(&pfd, 1, 0); // Non-blocking check for data
+
+    // Return true if there is pending data
+    if (result >= 0 && (pfd.revents & POLLIN)) return true;
+
+    // Return false if there is either an error or there is no pending data
+    return false;
 }
 
 

@@ -6,33 +6,29 @@
 #include "../Connection.h"
 #include "ServerConnection.h"
 #include "MessageHandler.h"
-#include <vector>
-#include <queue>
 #include <unordered_map>
 #include <string>
+#include <vector>
 #include <thread>
 #include <mutex>
 #include <condition_variable>
-#include <poll.h>
 
 class ConnectionManager {
+    friend class BroadcastManager;
 public:
-    ConnectionManager(Server &server, ServerConnection *serverConnection);
+    ConnectionManager(Server &server, ServerConnection &serverConnection);
     ~ConnectionManager();
 
 private:
     Server &m_Server;
 
-    int m_ServerSocketID;
     std::unordered_map<int, Connection *> m_Connections;
-    std::queue<Connection *> m_NewConnections;
-    std::vector<pollfd> m_PollFDs;
+    int m_ServerFD;
 
     mutable std::mutex m_Mutex;
     std::thread m_EventThread;
     std::condition_variable m_EventCV;
 
-    mutable std::mutex m_QueueMutex;
     std::thread m_AcceptorThread;
 
 public:
@@ -40,17 +36,19 @@ public:
     bool empty() const { return m_Connections.empty(); }
     std::unordered_map<int, Connection *>::iterator begin() { return m_Connections.begin(); }
     std::unordered_map<int, Connection *>::iterator end() { return m_Connections.end(); }
-    int getServerSocketID() const { return m_ServerSocketID; }
+    int getServerFD() const { return m_ServerFD; }
 
-    bool addConnection(Connection *connection);
+    bool addConnection(Connection &connection);
     bool removeConnection(int socketFD);
-    Connection *getConnection(int socketFD);
-    Connection *operator[](int socketFD);
+    Connection *getConnection(int fd);
+    Connection *operator[](int fd);
 
 private:
-    void eventLoopWork();
+    void eventThreadWork();
     void acceptorThreadWork();
 
-    void checkConnectionTimeouts();
+    std::vector<int> processConnections();
+    void validateConnections();
+    void purgeConnections(const std::vector<int> &connectionsToPurge);
     void processMessage(Connection &connection, const std::string &message);
 };

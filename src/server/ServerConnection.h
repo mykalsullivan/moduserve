@@ -13,5 +13,5 @@ public:
     bool createAddress(int port);
     bool bindAddress();
     bool startListening();
-    bool acceptClient(Connection &connection);
+    Connection *acceptClient();
 };

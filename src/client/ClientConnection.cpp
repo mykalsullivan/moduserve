@@ -11,10 +11,10 @@
 
 ClientConnection::~ClientConnection()
 {
-    if (m_SocketFD != -1)
+    if (m_FD != -1)
     {
-        shutdown(m_SocketFD, SHUT_RDWR);
-        close(m_SocketFD);
+        shutdown(m_FD, SHUT_RDWR);
+        close(m_FD);
     }
     stopKeepaliveThread();
     stopMessagePollingThread();
@@ -38,7 +38,7 @@ int ClientConnection::connectToServer()
     LOG(LogLevel::DEBUG, "Attempting to connect to server at " + getIP() + ':' + std::to_string(getPort()));
 
     // Attempt to connect
-    int connectionResult = connect(m_SocketFD, reinterpret_cast<sockaddr *>(&m_Address), sizeof(m_Address));
+    int connectionResult = connect(m_FD, reinterpret_cast<sockaddr *>(&m_Address), sizeof(m_Address));
 
     // Immediately return if successful
     if (connectionResult == 0) {
@@ -73,7 +73,7 @@ int ClientConnection::connectToServer()
     // If connection is in progress, use poll to wait for it
     if (connectionResult == -1 && errno == EINPROGRESS) {
         pollfd pfd {};
-        pfd.fd = m_SocketFD;
+        pfd.fd = m_FD;
         pfd.events = POLLOUT; // We are waiting for the socket to become writable (i.e., connected)
         pfd.revents = 0;
 
@@ -90,7 +90,7 @@ int ClientConnection::connectToServer()
             // Check if the socket is writable (connection is completed)
             int socketError = 0;
             socklen_t len = sizeof(socketError);
-            if (getsockopt(m_SocketFD, SOL_SOCKET, SO_ERROR, &socketError, &len) == -1) {
+            if (getsockopt(m_FD, SOL_SOCKET, SO_ERROR, &socketError, &len) == -1) {
                 LOG(LogLevel::ERROR, "Failed to check socket error after poll");
                 return -2;
             }
@@ -110,11 +110,11 @@ int ClientConnection::connectToServer()
 
 void ClientConnection::closeConnection()
 {
-    if (m_SocketFD != -1) {
+    if (m_FD != -1) {
         LOG(LogLevel::INFO, "Closing connection to " + getIP() + ':' + std::to_string(getPort()));
 
-        close(m_SocketFD);
-        m_SocketFD = -1;
+        close(m_FD);
+        m_FD = -1;
     }
     stopMessagePollingThread();
     stopKeepaliveThread();
@@ -124,7 +124,7 @@ void ClientConnection::closeConnection()
 std::string ClientConnection::receiveMessage() const
 {
     char buffer[1024];
-    ssize_t bytesReceived = recv(m_SocketFD, buffer, sizeof(buffer), 0);
+    ssize_t bytesReceived = recv(m_FD, buffer, sizeof(buffer), 0);
     if (bytesReceived > 0) {
         return std::string(buffer, bytesReceived);
     } else if (bytesReceived == 0) {
@@ -144,7 +144,7 @@ void ClientConnection::startMessagePollingThread() {
 
         while (m_MessagePolling) {
             //LOG(LogLevel::DEBUG, "Polling...");
-            pfd.fd = m_SocketFD;       // Set the file descriptor
+            pfd.fd = m_FD;       // Set the file descriptor
             pfd.events = POLLIN;       // Make it poll events
             pfd.revents = 0;           // Initialize the events to 0
 
@@ -182,11 +182,11 @@ void ClientConnection::startKeepaliveThread()
         LOG(LogLevel::DEBUG, "Started keepalive thread");
         while (m_KeepaliveRunning)
         {
-            if (m_SocketFD != -1) {
+            if (m_FD != -1) {
                 //LOG(LogLevel::DEBUG, "Sending keepalive message...");
                 std::string keepaliveMessage = "KEEPALIVE";
                 if (!keepaliveMessage.empty())
-                    sendMessage("KEEPALIVE");
+                    sendData("KEEPALIVE");
             }
             std::this_thread::sleep_for(std::chrono::seconds(m_KeepaliveInterval));
         }

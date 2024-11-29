@@ -20,7 +20,6 @@ private:
 
 public:
     void handleMessage(Connection &sender, const std::string &message);
-    void broadcastMessage(Connection &sender, const std::string &message);
 
 private:
     void parseMessage(Connection &sender, const std::string &message);

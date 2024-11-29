@@ -42,10 +42,10 @@ bool UserManager::removeUser(int socketID)
     return true;
 }
 
-User *UserManager::getUser(int socketID)
+User *UserManager::getUser(int socketFD)
 {
     std::lock_guard lock(m_UserMutex);
-    auto it = m_Users.find(socketID);
+    auto it = m_Users.find(socketFD);
     return (it != m_Users.end()) ? it->second : nullptr;
 }
 
@@ -55,7 +55,7 @@ User *UserManager::operator[](int socketID)
 }
 
 // Make this work with an individual connection
-bool UserManager::authenticateConnection(int connectionID, const std::string &username, const std::string &password)
+bool UserManager::authenticateConnection(int connectionFD, const std::string &username, const std::string &password)
 {
     std::lock_guard lock(m_UserMutex);
     return m_Server.m_UserAuthenticator.authenticate(username, password);
