@@ -29,7 +29,7 @@ private:
     std::vector<pollfd> m_PollFDs;
 
     mutable std::mutex m_Mutex;
-    std::thread m_EventLoopThread;
+    std::thread m_EventThread;
     std::condition_variable m_EventCV;
 
     mutable std::mutex m_QueueMutex;
@@ -51,8 +51,6 @@ private:
     void eventLoopWork();
     void acceptorThreadWork();
 
-    void acceptConnection();
     void checkConnectionTimeouts();
-
     void processMessage(Connection &connection, const std::string &message);
 };

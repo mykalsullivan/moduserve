@@ -18,8 +18,11 @@ ConnectionManager::ConnectionManager(Server &server, ServerConnection *serverCon
     addConnection(serverConnection);
     m_ServerSocketID = serverConnection->getSocket();
 
+    // Start acceptor thread
+    m_AcceptorThread = std::thread(&ConnectionManager::acceptorThreadWork, this);
+
     // Start event loop thread
-    m_EventLoopThread = std::thread(&ConnectionManager::eventLoopWork, this);
+    m_EventThread = std::thread(&ConnectionManager::eventLoopWork, this);
 
     LOG(LogLevel::DEBUG, "Started connection manager");
 }
@@ -30,17 +33,34 @@ ConnectionManager::~ConnectionManager()
 
     // Stop and join the event loop
     m_EventCV.notify_all();
-    if (m_EventLoopThread.joinable()) m_EventLoopThread.join();
+    if (m_EventThread.joinable()) m_EventThread.join();
+    LOG(LogLevel::DEBUG, "Joined event thread");
 
-    // Disconnect all connections
-    std::lock_guard lock(m_Mutex);
-    for (auto connection : m_Connections)
-        if (connection.first != m_ServerSocketID)
-            removeConnection(connection.first);
+    // Join the acceptor loop
+    if (m_AcceptorThread.joinable()) m_AcceptorThread.join();
+    LOG(LogLevel::DEBUG, "Joined acceptor thread");
+
+    // Disconnect all clients
+    std::lock_guard lock(m_Mutex); // Protect access to m_Connections
+    for (auto it = m_Connections.begin(); it != m_Connections.end();)
+    {
+        if (it->first != m_ServerSocketID)
+        {
+            delete it->second; // Free memory for the connection
+            it = m_Connections.erase(it); // Erase returns the next valid iterator
+        }
+        else
+            ++it;
+    }
+    LOG(LogLevel::DEBUG, "Disconnected all clients");
 
     // Shut the server connection down
-    removeConnection(m_ServerSocketID); // Remove the server connection last
-    m_Connections.clear();
+    if (m_Connections.contains(m_ServerSocketID))
+    {
+        delete m_Connections[m_ServerSocketID]; // Free memory for the server socket
+        m_Connections.erase(m_ServerSocketID);
+    }
+    LOG(LogLevel::DEBUG, "Disconnected server socket");
 
     LOG(LogLevel::DEBUG, "Stopped connection manager");
 }
@@ -105,21 +125,21 @@ void ConnectionManager::eventLoopWork()
 
         std::unique_lock lock(m_Mutex);
         m_EventCV.wait(lock, [this] {
-            return !m_Server.m_Running || !m_Connections.empty();
+            return !m_Server.m_Running || m_Connections.size() > 1;
         });
         if (!m_Server.m_Running) break;
 
-        std::vector<pollfd> pollFDs;
+        LOG(LogLevel::DEBUG, "Building pollFDs vector...");
         for (auto &pair : m_Connections)
         {
             pollfd pfd {};
             pfd.fd = pair.second->getSocket();
             pfd.events = POLLIN;
-            pollFDs.emplace_back(pfd);
+            m_PollFDs.emplace_back(pfd);
         }
-        lock.unlock();
 
-        int result = poll(pollFDs.data(), pollFDs.size(), 1000); // 1-second timeout
+        int result = poll(m_PollFDs.data(), m_PollFDs.size(), 1000); // 1-second timeout
+        lock.unlock();
         if (result < 0)
         {
             if (errno == EINTR) continue; // Retry on signal interrupation
@@ -128,8 +148,9 @@ void ConnectionManager::eventLoopWork()
         }
 
         // Handle events
+        LOG(LogLevel::DEBUG, "Handling events...");
         lock.lock();
-        for (auto &pfd : pollFDs)
+        for (auto &pfd : m_PollFDs)
         {
             if (pfd.revents & POLLIN)
             {
@@ -157,38 +178,33 @@ void ConnectionManager::acceptorThreadWork()
 {
     while (m_Server.m_Running)
     {
+        //LOG(LogLevel::DEBUG, "Attempting to accept connection...");
 
-    }
-}
-
-
-void ConnectionManager::acceptConnection()
-{
-    LOG(LogLevel::DEBUG, "Attempting to accept connection...");
-
-    sockaddr_in clientAddress {};
-    socklen_t clientAddressLength = sizeof(clientAddress);
-    int clientFD = accept(m_ServerSocketID, reinterpret_cast<sockaddr *>(&clientAddress), &clientAddressLength);
-    if (clientFD >= 0)
-    {
-        auto client = new Connection();
-        client->setSocket(clientFD);
-        client->setAddress(clientAddress);
-
-        if (addConnection(client))
+        sockaddr_in clientAddress {};
+        socklen_t clientAddressLength = sizeof(clientAddress);
+        int clientFD = accept(m_ServerSocketID, reinterpret_cast<sockaddr *>(&clientAddress), &clientAddressLength);
+        if (clientFD >= 0)
         {
-            LOG(LogLevel::DEBUG, "Client accepted: " + client->getIP() + ":" + std::to_string(client->getPort()));
-            m_Server.m_MessageHandler.broadcastMessage(*m_Connections[m_ServerSocketID], "Client " + std::to_string(clientFD) + " (" + client->getIP() + ':' + std::to_string(client->getPort()) + ") connected");
-            m_EventCV.notify_one();
+            auto client = new Connection();
+            client->setSocket(clientFD);
+            client->setAddress(clientAddress);
+
+            if (addConnection(client))
+            {
+                LOG(LogLevel::DEBUG, "Client accepted: " + client->getIP() + ":" + std::to_string(client->getPort()));
+                m_Server.m_MessageHandler.broadcastMessage(*m_Connections[m_ServerSocketID], "Client " + std::to_string(clientFD) + " (" + client->getIP() + ':' + std::to_string(client->getPort()) + ") connected");
+                m_EventCV.notify_one();
+            }
+            else
+            {
+                LOG(LogLevel::ERROR, "Failed to add connection.");
+                delete client;
+            }
         }
-        else
-        {
-            LOG(LogLevel::ERROR, "Failed to add connection.");
-            delete client;
-        }
+        //else
+        //  LOG(LogLevel::ERROR, "Failed to accept client connection.");
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
-    else
-        LOG(LogLevel::ERROR, "Failed to accept client connection.");
 }
 
 void ConnectionManager::processMessage(Connection &connection, const std::string &message)
@@ -196,10 +212,9 @@ void ConnectionManager::processMessage(Connection &connection, const std::string
     m_Server.m_MessageHandler.handleMessage(connection, message);
 }
 
-
 void ConnectionManager::checkConnectionTimeouts()
 {
-    std::lock_guard lock(m_Mutex);
+    //std::lock_guard lock(m_Mutex);
 
     for (auto it = m_Connections.begin(); it != m_Connections.end();)
     {
