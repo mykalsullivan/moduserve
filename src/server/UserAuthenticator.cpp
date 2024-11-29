@@ -10,16 +10,22 @@
 UserAuthenticator::UserAuthenticator(Server &server) : m_Server(server)
 {
     std::string connectionString = "dbname=practice_server_user_db user=msullivan password=Mpwfsqli$ hostaddr=127.0.0.1 port=5432";
-    try {
+    try
+    {
         m_DatabaseConnection = new pqxx::connection(connectionString);
-        if (m_DatabaseConnection->is_open()) {
-            Logger::instance().logMessage(LogLevel::INFO, "Successfully connected to user database");
-        } else {
-            Logger::instance().logMessage(LogLevel::ERROR, "Failed to connect to user database");
+        if (m_DatabaseConnection->is_open())
+        {
+            LOG(LogLevel::INFO, "Successfully connected to user database");
+        }
+        else
+        {
+            LOG(LogLevel::ERROR, "Failed to connect to user database");
             m_DatabaseConnection = nullptr;
         }
-    } catch (const std::exception &e) {
-        Logger::instance().logMessage(LogLevel::ERROR, "Error connecting to database: " + std::string(e.what()));
+    }
+    catch (const std::exception &e)
+    {
+        LOG(LogLevel::ERROR, "Error connecting to database: " + std::string(e.what()));
         m_DatabaseConnection = nullptr;
     }
 }
@@ -32,7 +38,7 @@ UserAuthenticator::~UserAuthenticator()
 bool UserAuthenticator::authenticate(const std::string &username, const std::string &password)
 {
     if (m_DatabaseConnection == nullptr) {
-        Logger::instance().logMessage(LogLevel::ERROR, "Database connection is not established.");
+        LOG(LogLevel::ERROR, "Database connection is not established.");
         return false;
     }
 
@@ -42,7 +48,7 @@ bool UserAuthenticator::authenticate(const std::string &username, const std::str
         pqxx::result result = transaction.exec(query);
 
         if (result.empty()) {
-            Logger::instance().logMessage(LogLevel::WARNING, "\"" + username + "\" could not be found in the database");
+            LOG(LogLevel::WARNING, "\"" + username + "\" could not be found in the database");
             return false;
         }
 
@@ -53,27 +59,31 @@ bool UserAuthenticator::authenticate(const std::string &username, const std::str
             return true; // Authentication successful
         }
 
-        Logger::instance().logMessage(LogLevel::WARNING, "\"" + username + "\" provided an incorrect password");
+        LOG(LogLevel::WARNING, "\"" + username + "\" provided an incorrect password");
     } catch (const std::exception &e) {
-        Logger::instance().logMessage(LogLevel::ERROR, "Error during authentication: " + std::string(e.what()));
+        LOG(LogLevel::ERROR, "Error during authentication: " + std::string(e.what()));
     }
     return false;
 }
 
 bool UserAuthenticator::usernameExists(const std::string &username) const
 {
-    if (m_DatabaseConnection == nullptr) {
-        Logger::instance().logMessage(LogLevel::ERROR, "Database connection is not established.");
+    if (m_DatabaseConnection == nullptr)
+    {
+        LOG(LogLevel::ERROR, "Database connection is not established.");
         return false;
     }
 
-    try {
+    try
+    {
         pqxx::work transaction(*m_DatabaseConnection);
         std::string query = "SELECT COUNT(*) FROM users WHERE username = " + transaction.quote(username) + ";";
         pqxx::result result = transaction.exec(query);
         return result[0][0].as<int>() > 0; // Return true if the username exists
-    } catch (const std::exception &e) {
-        Logger::instance().logMessage(LogLevel::ERROR, "Error checking username existence: " + std::string(e.what()));
+    }
+    catch (const std::exception &e)
+    {
+        LOG(LogLevel::ERROR, "Error checking username uniqueness: " + std::string(e.what()));
     }
     return false;
 }

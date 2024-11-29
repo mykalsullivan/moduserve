@@ -3,12 +3,11 @@
 //
 
 #pragma once
-
-#include "Server.h"
 #include <string>
-#include <mutex>
-#include <condition_variable>
 #include <pqxx/pqxx>
+
+// Forward declaration(s)
+class Server;
 
 class UserAuthenticator {
 public:
@@ -17,7 +16,6 @@ public:
 
 private:
     Server &m_Server;
-
     pqxx::connection *m_DatabaseConnection;
 
 public:

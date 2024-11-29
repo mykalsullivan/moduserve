@@ -8,6 +8,7 @@
 #include "ServerConnection.h"
 #include "Server.h"
 #include <cstring>
+#include <poll.h>
 
 ConnectionManager::ConnectionManager(Server &server, ServerConnection *serverConnection) : m_Server(server)
 {
@@ -18,22 +19,22 @@ ConnectionManager::ConnectionManager(Server &server, ServerConnection *serverCon
     addConnection(serverConnection);
     m_ServerSocketID = serverConnection->getSocket();
 
-    Logger::instance().logMessage(LogLevel::DEBUG, "Starting connection manager...");
+    LOG(LogLevel::DEBUG, "Starting connection manager...");
 
     // Start handler thread
     m_ConnectionHandlerThread = std::thread([this] {
-        Logger::instance().logMessage(LogLevel::DEBUG, "(ConnectionManager) Started handler thread");
+        LOG(LogLevel::DEBUG, "(ConnectionManager) Started handler thread");
         while (m_Server.isRunning())
         {
             acceptConnection();
             handleConnections();
         }
-        Logger::instance().logMessage(LogLevel::INFO, "(ConnectionManager) Stopped handler thread");
+        LOG(LogLevel::INFO, "(ConnectionManager) Stopped handler thread");
     });
 
     // Start timeout thread
     m_ConnectionTimeoutThread = std::thread([this] {
-        Logger::instance().logMessage(LogLevel::DEBUG, "(ConnectionManager) Started timeout thread");
+        LOG(LogLevel::DEBUG, "(ConnectionManager) Started timeout thread");
 
         std::unique_lock lock(m_ConnectionTimeoutMutex);
         while (m_Server.isRunning())
@@ -44,22 +45,26 @@ ConnectionManager::ConnectionManager(Server &server, ServerConnection *serverCon
             if (m_Server.isRunning())
                 checkConnectionTimeouts();
         }
-        Logger::instance().logMessage(LogLevel::INFO, "(ConnectionManager) Stopped timeout thread");
+        LOG(LogLevel::INFO, "(ConnectionManager) Stopped timeout thread");
     });
 
-    Logger::instance().logMessage(LogLevel::DEBUG, "Started connection manager");
+    LOG(LogLevel::DEBUG, "Started connection manager");
 }
 
 ConnectionManager::~ConnectionManager()
 {
-    Logger::instance().logMessage(LogLevel::DEBUG, "Stopping connection manager...");
+    LOG(LogLevel::DEBUG, "Stopping connection manager...");
 
     // Disconnect all connections
     for (auto connection : m_Connections)
-    {
-        if (connection.first == m_ServerSocketID) continue; // Skip server connection
-        removeConnection(connection.first);
-    }
+        if (connection.first != m_ServerSocketID)
+        {
+            removeConnection(connection.first);
+            m_Connections.erase(connection.first);
+        }
+
+    // Shut the server connection down
+    shutdown(m_ServerSocketID, SHUT_RDWR);
     removeConnection(m_ServerSocketID); // Remove the server connection last
     m_Connections.clear();
 
@@ -70,7 +75,7 @@ ConnectionManager::~ConnectionManager()
     if (m_ConnectionTimeoutThread.joinable())
         m_ConnectionTimeoutThread.join();
 
-    Logger::instance().logMessage(LogLevel::DEBUG, "Stopped connection manager");
+    LOG(LogLevel::DEBUG, "Stopped connection manager");
 }
 
 size_t ConnectionManager::size() const
@@ -100,19 +105,20 @@ std::unordered_map<int, Connection *>::iterator ConnectionManager::end()
 
 bool ConnectionManager::addConnection(Connection *connection)
 {
-    //Logger::instance().logMessage(LogLevel::DEBUG, "Attempting to add connection...");
+    //LOG(LogLevel::DEBUG, "Attempting to add connection...");
     std::lock_guard lock(m_ConnectionMutex);
 
     int socketID = connection->getSocket();
-    //Logger::instance().logMessage(LogLevel::DEBUG, "socketID = " + std::to_string(socketID));
+    //LOG(LogLevel::DEBUG, "socketID = " + std::to_string(socketID));
 
-    if (m_Connections.contains(socketID)) {
-        Logger::instance().logMessage(LogLevel::ERROR, "Connection already exists");
+    if (m_Connections.contains(socketID))
+    {
+        LOG(LogLevel::ERROR, "Connection already exists");
         return false; // Connection already exists
     }
     m_Connections[socketID] = connection;
     m_ConnectionTimeoutCV.notify_one(); // Notify the timeout thread about the new connection
-    //Logger::instance().logMessage(LogLevel::DEBUG, "Connection added");
+    //LOG(LogLevel::DEBUG, "Connection added");
     return true;
 }
 
@@ -121,15 +127,16 @@ bool ConnectionManager::removeConnection(int socketID)
     std::lock_guard lock(m_ConnectionMutex);
 
     auto it = m_Connections.find(socketID);
-    if (it != m_Connections.end()) {
+    if (it != m_Connections.end())
+    {
         close(it->first);
         delete it->second;  // Clean up the connection
         m_Connections.erase(it);
         m_ConnectionTimeoutCV.notify_one();
-        Logger::instance().logMessage(LogLevel::DEBUG, "Connection removed for socket ID: " + std::to_string(socketID));
+        LOG(LogLevel::DEBUG, "Connection removed for socket ID: " + std::to_string(socketID));
         return true;
     }
-    Logger::instance().logMessage(LogLevel::ERROR, "Connection not found for socket ID: " + std::to_string(socketID));
+    LOG(LogLevel::ERROR, "Connection not found for socket ID: " + std::to_string(socketID));
     return false; // Connection not found
 }
 
@@ -138,9 +145,8 @@ Connection *ConnectionManager::getConnection(int socketID)
     std::lock_guard lock(m_ConnectionMutex);
 
     auto it = m_Connections.find(socketID);
-    if (it != m_Connections.end()) {
+    if (it != m_Connections.end())
         return it->second;
-    }
     return nullptr;
 }
 
@@ -149,9 +155,8 @@ Connection *ConnectionManager::operator[](int socketID)
     std::lock_guard lock(m_ConnectionMutex);
 
     auto it = m_Connections.find(socketID);
-    if (it != m_Connections.end()) {
+    if (it != m_Connections.end())
         return it->second;
-    }
     return nullptr;
 }
 
@@ -164,7 +169,7 @@ int ConnectionManager::getServerSocketID() const
 
 void ConnectionManager::acceptConnection()
 {
-    //Logger::instance().logMessage(LogLevel::DEBUG, "Attempting to accept connection...");
+    //LOG(LogLevel::DEBUG, "Attempting to accept connection...");
 
     pollfd pfd {};
     pfd.fd = m_ServerSocketID;
@@ -172,8 +177,9 @@ void ConnectionManager::acceptConnection()
 
     static int timeoutRate = 500;
     int result = poll(&pfd, 1, timeoutRate);
-    if (result == -1) {
-        Logger::instance().logMessage(LogLevel::ERROR, "Poll failed on server socket.");
+    if (result == -1)
+    {
+        LOG(LogLevel::ERROR, "Poll failed on server socket.");
         return;
     }
 
@@ -195,18 +201,21 @@ void ConnectionManager::acceptConnection()
     socklen_t clientAddressLength = sizeof(clientAddress);
 
     int clientFD = -1;
-    if (pfd.revents & POLLIN) {
+    if (pfd.revents & POLLIN)
+    {
         // Accept the new client connection and add to the manager
         clientFD = accept(m_ServerSocketID, reinterpret_cast<sockaddr *>(&clientAddress), &clientAddressLength);
 
         // Check for errors in accepting connection
-        if (clientFD == -1) {
+        if (clientFD == -1)
+        {
             // If no connection is ready, errno will be EAGAIN or EWOULDBLOCK
-            if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                Logger::instance().logMessage(LogLevel::ERROR, "No data available for connection.");
+            if (errno == EAGAIN || errno == EWOULDBLOCK)
+            {
+                LOG(LogLevel::ERROR, "No data available for connection.");
                 return;
             }
-            Logger::instance().logMessage(LogLevel::ERROR, "Failed to accept client connection.");
+            LOG(LogLevel::ERROR, "Failed to accept client connection.");
             return;
         }
     }
@@ -217,21 +226,23 @@ void ConnectionManager::acceptConnection()
     client->setAddress(clientAddress);
     client->setNonBlocking();
 
-    if (!addConnection(client)) {
-        Logger::instance().logMessage(LogLevel::ERROR, "Failed to add connection.");
+    if (!addConnection(client))
+    {
+        LOG(LogLevel::ERROR, "Failed to add connection.");
         delete client;
         return;
     }
-    Logger::instance().logMessage(LogLevel::DEBUG, "Client accepted: " + client->getIP() + ":" + std::to_string(client->getPort()));
-    m_Server.messageHandler().broadcastMessage(m_Connections[m_ServerSocketID], "Client " + std::to_string(clientFD) + " (" + client->getIP() + ':' + std::to_string(client->getPort()) + ") connected");
+    LOG(LogLevel::DEBUG, "Client accepted: " + client->getIP() + ":" + std::to_string(client->getPort()));
+    m_Server.m_MessageHandler.broadcastMessage(*m_Connections[m_ServerSocketID], "Client " + std::to_string(clientFD) + " (" + client->getIP() + ':' + std::to_string(client->getPort()) + ") connected");
 }
 
 void ConnectionManager::handleConnections()
 {
-    //Logger::instance().logMessage(LogLevel::DEBUG, "Handling...");
+    //LOG(LogLevel::DEBUG, "Handling...");
 
     // Clear and then populate pollfds for each active connection
-    m_PollFDs.clear();
+    std::vector<pollfd> pollFDs;
+    pollFDs.clear();
     for (auto pair : m_Connections)
     {
         auto connection = pair.second;
@@ -244,15 +255,15 @@ void ConnectionManager::handleConnections()
         pfd.events = POLLIN;                    // Make it poll events
         pfd.revents = 0;                        // Initialize the events to 0
 
-        m_PollFDs.emplace_back(pfd);
+        pollFDs.emplace_back(pfd);
     }
 
     static int timeoutRate = 500; // Timeout rate in milliseconds
     static int idleCount = 0; // Idle connection counter
-    int result = poll(m_PollFDs.data(), m_PollFDs.size(), timeoutRate);  // Block indefinitely or set a timeout
+    int result = poll(pollFDs.data(), pollFDs.size(), timeoutRate);  // Block indefinitely or set a timeout
     if (result < 0)
     {
-        Logger::instance().logMessage(LogLevel::ERROR, "Poll failed: " + std::string(strerror(errno)));
+        LOG(LogLevel::ERROR, "Poll failed: " + std::string(strerror(errno)));
         return;
     }
 
@@ -272,8 +283,7 @@ void ConnectionManager::handleConnections()
     idleCount = 500; // Reset to default when activity occurs
 
     // Handle events
-    for (auto &pollFD : m_PollFDs)
-    {
+    for (auto &pollFD : pollFDs)
         if (pollFD.revents & POLLIN)
         {
             auto connection = m_Connections[pollFD.fd];
@@ -282,26 +292,20 @@ void ConnectionManager::handleConnections()
                 std::string message = connection->receiveMessage();
                 if (message.empty())
                 {
-                    Logger::instance().logMessage(LogLevel::INFO, "Client (" + connection->getIP() + ':' + std::to_string(connection->getPort()) + ")'s connection reset (disconnected)");
-                    m_Server.messageHandler().broadcastMessage(connection, "Client (" + connection->getIP() + ':' + std::to_string(connection->getPort()) + ")'s connection reset (disconnected)");
+                    LOG(LogLevel::INFO, "Client (" + connection->getIP() + ':' + std::to_string(connection->getPort()) + ")'s connection reset (disconnected)");
+                    m_Server.m_MessageHandler.broadcastMessage(*connection, "Client (" + connection->getIP() + ':' + std::to_string(connection->getPort()) + ")'s connection reset (disconnected)");
                     removeConnection(connection->getSocket());
                 }
                 else
-                {
-                    //Logger::instance().logMessage(LogLevel::DEBUG, "Placing message on the queue...");
-                    pushMessageToQueue(connection, message);
-                }
+                    pushMessage(*connection, message);
             }
         }
-    }
 }
 
-void ConnectionManager::pushMessageToQueue(Connection *connection, const std::string &message)
+void ConnectionManager::pushMessage(Connection &connection, const std::string &message)
 {
-    std::lock_guard lock(m_MessageQueueMutex);
-    m_MessageQueue.emplace(connection, message);
-    m_MessageQueueCV.notify_one(); // Notify the MessageHandler to process the message
-    //Logger::instance().logMessage(LogLevel::DEBUG, "Notified MessageHandler that a message has been received");
+    m_Server.m_MessageHandler.handleMessage(connection, message);
+    //LOG(LogLevel::DEBUG, "Notified MessageHandler that a message has been received");
 }
 
 
@@ -317,13 +321,11 @@ void ConnectionManager::checkConnectionTimeouts()
         // Don't time out the server, obviously
         if (connection->getSocket() != m_ServerSocketID && connection->isInactive(30))
         {
-            Logger::instance().logMessage(LogLevel::INFO, "Client @ " + connection->getIP() + ':' + std::to_string(connection->getPort()) + " timed out; disconnecting...");
+            LOG(LogLevel::INFO, "Client @ " + connection->getIP() + ':' + std::to_string(connection->getPort()) + " timed out; disconnecting...");
             removeConnection(it->first);  // Timeout connection
             it = m_Connections.erase(it);
         }
         else
-        {
             ++it;
-        }
     }
 }

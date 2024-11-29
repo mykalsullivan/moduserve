@@ -92,5 +92,5 @@ auto UserManager::end()
 bool UserManager::authenticateConnection(int connectionID, const std::string &username, const std::string &password)
 {
     std::lock_guard lock(m_UserMutex);
-    return m_Server.authenticatorService().authenticate(username, password);
+    return m_Server.m_UserAuthenticator.authenticate(username, password);
 }

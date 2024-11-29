@@ -36,3 +36,5 @@ public:
 private:
     void logThreadFunction();
 };
+
+#define LOG(logLevel, message) Logger::instance().logMessage(logLevel, message);

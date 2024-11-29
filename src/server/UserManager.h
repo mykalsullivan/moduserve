@@ -18,7 +18,6 @@ public:
 
 private:
     Server &m_Server;
-
     std::unordered_map<int, User *> m_Users;
     mutable std::mutex m_UserMutex;
 
