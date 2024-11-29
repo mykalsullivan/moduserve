@@ -13,8 +13,6 @@ BroadcastManager::BroadcastManager(Server &server) : m_Server(server)
 
 void BroadcastManager::broadcastMessage(Connection &sender, const std::string &message)
 {
-    LOG(LogLevel::INFO, "Broadcasting message: \"" + message + "\"");
-
     for (auto &[fd, connection] : m_Server.m_ConnectionManager)
     {
         // Skip server and sender
@@ -22,8 +20,8 @@ void BroadcastManager::broadcastMessage(Connection &sender, const std::string &m
 
         // Attempt to send message
         if (connection->sendData(message))
-            LOG(LogLevel::DEBUG, "Sent message to client " + std::to_string(fd) + " (" + connection->getIP() + ':' + std::to_string(connection->getPort()) + ')')
+            LOG(LogLevel::DEBUG, "Sent message to client @ " + connection->getIP() + ':' + std::to_string(connection->getPort()))
         else
-            LOG(LogLevel::ERROR, "Failed to send message to client " + std::to_string(fd) + " (" + connection->getIP() + ':' + std::to_string(connection->getPort()) + ')')
+            LOG(LogLevel::ERROR, "Failed to send message to client @ " + connection->getIP() + ':' + std::to_string(connection->getPort()))
     }
 }

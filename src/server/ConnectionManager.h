@@ -5,13 +5,15 @@
 #pragma once
 #include "../Connection.h"
 #include "ServerConnection.h"
-#include "MessageHandler.h"
 #include <unordered_map>
 #include <string>
 #include <vector>
 #include <thread>
 #include <mutex>
 #include <condition_variable>
+
+// Forward declaration(s)
+class Server;
 
 class ConnectionManager {
     friend class BroadcastManager;

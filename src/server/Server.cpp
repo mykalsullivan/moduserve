@@ -7,7 +7,6 @@
 #include "ConnectionManager.h"
 #include "UserAuthenticator.h"
 #include "UserManager.h"
-#include "MessageHandler.h"
 #include "../Logger.h"
 #include <iostream>
 
@@ -44,6 +43,7 @@ int processArgs(int argc, char **argv)
 
 ServerConnection *init(int argc, char **argv)
 {
+    LOG(LogLevel::INFO, "Starting ChatApplicationServer...")
     if (processArgs(argc, argv) < 0)
         exit(EXIT_FAILURE);
 
@@ -80,9 +80,8 @@ ServerConnection *init(int argc, char **argv)
         delete serverConnection;
         exit(EXIT_FAILURE);
     }
-    LOG(LogLevel::INFO,
-                                  "Listening for new connections on " + serverConnection->getIP() + ':' +
-                                  std::to_string(serverConnection->getPort()) + ')');
+    LOG(LogLevel::INFO, "Listening for new connections on " + serverConnection->getIP() + ':' +
+                        std::to_string(serverConnection->getPort()) + ')');
     return serverConnection;
 }
 

@@ -5,13 +5,11 @@
 #include "ConnectionManager.h"
 #include "ServerConnection.h"
 #include "Server.h"
-#include "MessageHandler.h"
+#include "MessageProcessor.h"
 #include "../Logger.h"
 
 ConnectionManager::ConnectionManager(Server &server, ServerConnection &serverConnection) : m_Server(server)
 {
-    LOG(LogLevel::DEBUG, "Starting connection manager...");
-
     // Set server connection
     addConnection(serverConnection);
     m_ServerFD = serverConnection.getFD();
@@ -22,21 +20,17 @@ ConnectionManager::ConnectionManager(Server &server, ServerConnection &serverCon
     // Start event loop thread
     m_EventThread = std::thread(&ConnectionManager::eventThreadWork, this);
 
-    LOG(LogLevel::DEBUG, "Started connection manager");
+    LOG(LogLevel::INFO, "Started connection manager");
 }
 
 ConnectionManager::~ConnectionManager()
 {
-    LOG(LogLevel::DEBUG, "Stopping connection manager...");
-
     // Stop and join the event loop
     m_EventCV.notify_all();
     if (m_EventThread.joinable()) m_EventThread.join();
-    LOG(LogLevel::DEBUG, "Joined event thread");
 
     // Join the acceptor loop
     if (m_AcceptorThread.joinable()) m_AcceptorThread.join();
-    LOG(LogLevel::DEBUG, "Joined acceptor thread");
 
     // Disconnect all clients
     std::lock_guard lock(m_Mutex); // Protect access to m_Connections
@@ -50,7 +44,6 @@ ConnectionManager::~ConnectionManager()
         else
             ++it;
     }
-    LOG(LogLevel::DEBUG, "Disconnected all clients");
 
     // Shut the server connection down
     if (m_Connections.contains(m_ServerFD))
@@ -58,9 +51,8 @@ ConnectionManager::~ConnectionManager()
         delete m_Connections[m_ServerFD]; // Free memory for the server socket
         m_Connections.erase(m_ServerFD);
     }
-    LOG(LogLevel::DEBUG, "Disconnected server socket");
 
-    LOG(LogLevel::DEBUG, "Stopped connection manager");
+    LOG(LogLevel::INFO, "Stopped connection manager");
 }
 
 bool ConnectionManager::addConnection(Connection &connection)
@@ -112,8 +104,6 @@ Connection *ConnectionManager::operator[](int fd)
 
 void ConnectionManager::eventThreadWork()
 {
-    LOG(LogLevel::INFO, "Started ConnectionManager event loop");
-
     while (m_Server.m_Running)
     {
         std::unique_lock lock(m_Mutex);
@@ -127,7 +117,6 @@ void ConnectionManager::eventThreadWork()
         purgeConnections(connectionsToPurge);
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
-    LOG(LogLevel::INFO, "Stopped ConnectionManager event loop");
 }
 
 void ConnectionManager::acceptorThreadWork()
@@ -138,9 +127,9 @@ void ConnectionManager::acceptorThreadWork()
         {
             if (addConnection(*client))
             {
-                LOG(LogLevel::INFO, "Client accepted: " + client->getIP() + ':' + std::to_string(client->getPort()));
+                LOG(LogLevel::INFO, "Client @ " + client->getIP() + ':' + std::to_string(client->getPort()) + " connected");
                 m_Server.m_BroadcastManager.broadcastMessage(*m_Connections[m_ServerFD],
-                    "Client " + std::to_string(client->getFD()) + " (" + client->getIP() + ':' + std::to_string(client->getPort()) + ") connected");
+                    "Client @ " + std::to_string(client->getFD()) + " (" + client->getIP() + ':' + std::to_string(client->getPort()) + ") connected");
             }
             else
             {

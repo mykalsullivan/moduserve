@@ -2,19 +2,19 @@
 // Created by msullivan on 11/10/24.
 //
 
-#include "MessageHandler.h"
+#include "MessageProcessor.h"
 #include "ConnectionManager.h"
 #include "UserManager.h"
 #include "../Logger.h"
 #include "Server.h"
 
-MessageHandler::MessageHandler(Server &server) : m_Server(server)
+MessageProcessor::MessageProcessor(Server &server) : m_Server(server)
 {}
 
 // This will need to do other stuff in the future
-void MessageHandler::handleMessage(Connection &sender, const std::string &message)
+void MessageProcessor::handleMessage(Connection &sender, const std::string &message)
 {
-    LOG(LogLevel::DEBUG,  + "Client " + std::to_string(sender.getFD()) + " (" + sender.getIP() + ':' + std::to_string(sender.getPort()) + " ) sent message: \"" + message + '\"');
+    LOG(LogLevel::INFO,  + "Client @ " + sender.getIP() + ':' + std::to_string(sender.getPort()) + " sent: \"" + message + '\"');
 
     // Add message to user's history
     m_Server.m_UserManager.getUser(sender.getFD())->addMessageToHistory(message);
@@ -24,7 +24,7 @@ void MessageHandler::handleMessage(Connection &sender, const std::string &messag
 }
 
 // This will eventually pass messages into a dedicated message processor/parser
-void MessageHandler::parseMessage(Connection &sender, const std::string &message)
+void MessageProcessor::parseMessage(Connection &sender, const std::string &message)
 {
     if (message == "/quit")
     {
@@ -34,6 +34,8 @@ void MessageHandler::parseMessage(Connection &sender, const std::string &message
     }
     else if (message == "/stop")
         m_Server.stop();
+    else if (message == "/" || message == "/help")
+        return; // Don't do anything for now. Will send a command list later
     else
     {
         //Logger::instance().logMessage(LogLevel::INFO, "Received message: \"" + message + "\" from client " + std::to_string(sender.getSocket()));

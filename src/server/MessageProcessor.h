@@ -10,10 +10,10 @@
 class Server;
 class Message;
 
-class MessageHandler {
+class MessageProcessor {
 public:
-    explicit MessageHandler(Server &server);
-    ~MessageHandler() = default;
+    explicit MessageProcessor(Server &server);
+    ~MessageProcessor() = default;
 
 private:
     Server &m_Server;

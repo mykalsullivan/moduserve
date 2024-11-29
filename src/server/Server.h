@@ -4,7 +4,7 @@
 
 #pragma once
 #include "ConnectionManager.h"
-#include "MessageHandler.h"
+#include "MessageProcessor.h"
 #include "BroadcastManager.h"
 #include "UserManager.h"
 #include "UserAuthenticator.h"
@@ -13,7 +13,7 @@
 
 class Server {
     friend class ConnectionManager;
-    friend class MessageHandler;
+    friend class MessageProcessor;
     friend class BroadcastManager;
     friend class UserManager;
     friend class UserAuthenticator;
@@ -27,7 +27,7 @@ private:
     std::condition_variable m_CV;
 
     ConnectionManager m_ConnectionManager;
-    MessageHandler m_MessageHandler;
+    MessageProcessor m_MessageHandler;
     BroadcastManager m_BroadcastManager;
     UserManager m_UserManager;
     UserAuthenticator m_UserAuthenticator;

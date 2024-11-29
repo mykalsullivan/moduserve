@@ -10,7 +10,7 @@ find_package(OpenSSL REQUIRED)
 include_directories(${PQXX_INCLUDE_DIRS})
 link_directories(${PQXX_LIBRARY_DIRS})
 
-add_compile_options(-Wall -Wextra -O5)
+add_compile_options(-Wall -Wextra -Os)
 
 add_executable(ChatApplicationServer
         src/server/main.cpp
@@ -18,7 +18,7 @@ add_executable(ChatApplicationServer
         src/server/Message.cpp
         src/server/main.cpp
         src/server/ServerConnection.cpp
-        src/server/MessageHandler.cpp
+        src/server/MessageProcessor.cpp
         src/server/ConnectionManager.cpp
         src/server/UserManager.cpp
         src/server/UserAuthenticator.cpp
@@ -27,6 +27,7 @@ add_executable(ChatApplicationServer
         src/Logger.cpp
         src/server/BroadcastManager.h
         src/server/BroadcastManager.cpp
+        src/server/MessageProcessor.h
 )
 
 target_link_libraries(ChatApplicationServer
