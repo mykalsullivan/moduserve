@@ -5,3 +5,4 @@
 - Introduce a signals/slots mechanism that will allow each subsystem to communicate with each other
     - Create a way to keep track of what subsystems are connected to what slots
 - Rename the project to something else. This project is starting to get cool, so it needs a cool name
+- Add Windows support
