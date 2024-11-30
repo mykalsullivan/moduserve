@@ -1,5 +1,5 @@
 # Define the server execuable
-add_executable(ChatApplicationServer
+add_executable(XServer
         main.cpp
         Server.cpp
         Message.cpp
@@ -8,8 +8,8 @@ add_executable(ChatApplicationServer
 )
 
 # Link dependencies to the server executable
-target_link_libraries(ChatApplicationServer
-        ChatApplicationCommon
+target_link_libraries(XServer
+        XServerCommon
         ConnectionSubsystem
         MessageSubsystem
         BroadcastSubsystem

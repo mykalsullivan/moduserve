@@ -3,5 +3,5 @@ add_library(MessageSubsystem STATIC
 )
 
 target_link_libraries(MessageSubsystem
-        ChatApplicationCommon
+        XServerCommon
 )

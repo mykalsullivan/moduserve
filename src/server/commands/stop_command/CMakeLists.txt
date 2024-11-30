@@ -3,5 +3,5 @@ add_library(StopCommand STATIC
 )
 
 target_link_libraries(StopCommand
-        ChatApplicationCommon
+        XServerCommon
 )

@@ -3,5 +3,5 @@ add_library(HelpCommand STATIC
 )
 
 target_link_libraries(HelpCommand
-        ChatApplicationCommon
+        XServerCommon
 )

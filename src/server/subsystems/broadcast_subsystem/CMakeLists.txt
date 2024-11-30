@@ -3,5 +3,5 @@ add_library(BroadcastSubsystem STATIC
 )
 
 target_link_libraries(BroadcastSubsystem
-        ChatApplicationCommon
+        XServerCommon
 )

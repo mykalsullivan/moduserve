@@ -3,5 +3,5 @@ add_library(CommandSubsystem STATIC
 )
 
 target_link_libraries(CommandSubsystem
-        ChatApplicationCommon
+        XServerCommon
 )

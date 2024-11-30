@@ -10,7 +10,7 @@ include_directories(${PQXX_INCLUDE_DIRS})
 link_directories(${PQXX_LIBRARY_DIRS})
 
 target_link_libraries(UserSubsystem
-        ChatApplicationCommon
+        XServerCommon
         ${PQXX_LIBRARIES}
         OpenSSL::Crypto
         OpenSSL::SSL
