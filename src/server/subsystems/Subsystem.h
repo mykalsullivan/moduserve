@@ -8,6 +8,6 @@
 class Subsystem {
 public:
     virtual ~Subsystem() = default;
-    [[nodiscard]] virtual int init() = 0;
+    virtual int init() = 0;
     [[nodiscard]] virtual constexpr std::string name() const = 0;
 };
