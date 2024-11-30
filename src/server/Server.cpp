@@ -28,12 +28,12 @@ Server &Server::instance()
 
 int Server::run(int argc, char **argv)
 {
-    LOG(LogLevel::INFO, "Starting ChatApplicationServer...")
+    LOG(LogLevel::INFO, "Starting XServer...")
 
     int initResult = init(argc, argv);
     if (initResult != 0) return initResult;
 
-
+    m_Running = true;
 
     std::unique_lock lock(m_Mutex);
     m_CV.wait(lock, [this] {
@@ -91,7 +91,7 @@ int Server::init(int argc, char **argv)
         delete serverConnection;
         exit(EXIT_FAILURE);
     }
-    //LOG(LogLevel::INFO, "Created server socket: " + std::to_string(serverConnection->getSocket()));
+    LOG(LogLevel::DEBUG, "Created server socket: " + std::to_string(serverConnection->getFD()));
 
     // 5. Create server address
     if (!serverConnection->createAddress(port))
@@ -100,7 +100,7 @@ int Server::init(int argc, char **argv)
         delete serverConnection;
         exit(EXIT_FAILURE);
     }
-    //LOG(LogLevel::INFO, "Successfully created server address (listening on all interfaces)");
+    LOG(LogLevel::DEBUG, "Successfully created server address (listening on all interfaces)");
 
     // 6. Bind socket to address
     if (!serverConnection->bindAddress())
@@ -109,7 +109,7 @@ int Server::init(int argc, char **argv)
         delete serverConnection;
         exit(EXIT_FAILURE);
     }
-    //LOG(LogLevel::INFO, "Successfully bound to address (" + serverConnection->getIP() + ':' + std::to_string(serverConnection->getPort()) + ')');
+    LOG(LogLevel::DEBUG, "Successfully bound to address (" + serverConnection->getIP() + ':' + std::to_string(serverConnection->getPort()) + ')');
 
     // 7. Listen to incoming connections
     if (!serverConnection->startListening())
@@ -129,10 +129,17 @@ int Server::init(int argc, char **argv)
     registerSubsystem(std::make_unique<UserSubsystem>());
 
     // 9. Initialize subsystems
-    for (auto &ss : m_Subservices)
-        ss.second->init();
-
-    LOG(LogLevel::INFO, "All subsystems initialized");
+    for (auto &ss : m_Subsystems)
+    {
+        int result = ss.second->init();
+        if (result == 0)
+            LOG(LogLevel::INFO, "Subsystem \"" + ss.second->name() + "\" initialized")
+        else
+        {
+            LOG(LogLevel::ERROR, "Subsystem \"" + ss.second->name() + "\" failed to initialize")
+            return 1;
+        }
+    }
     return 0;
 }
 
@@ -143,9 +150,9 @@ void Server::registerSubsystem(std::unique_ptr<Subsystem> subservice)
     // Ensure thread safety with a lock
     std::lock_guard lock(m_Mutex);
 
-    if (!m_Subservices.contains(serviceName))
+    if (!m_Subsystems.contains(serviceName))
     {
-        m_Subservices[serviceName] = std::move(subservice);
+        m_Subsystems[serviceName] = std::move(subservice);
         return;
     }
     throw std::runtime_error("Subsystem with name '" + serviceName + "' is already registered.");
@@ -156,8 +163,8 @@ Subsystem *Server::subsystem(const std::string &name) const
     // Ensure thread safety with a lock
     std::lock_guard lock(m_Mutex);
 
-    auto it = m_Subservices.find(name);
-    if (it != m_Subservices.end())
+    auto it = m_Subsystems.find(name);
+    if (it != m_Subsystems.end())
         return it->second.get();
     throw std::runtime_error("Subsystem with name \"" + name + "\" not found.");
 }

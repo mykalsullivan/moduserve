@@ -46,7 +46,7 @@ ConnectionSubsystem::~ConnectionSubsystem()
         m_Connections.erase(m_ServerFD);
     }
 
-    LOG(LogLevel::INFO, "Stopped connection manager");
+    LOG(LogLevel::INFO, "(ConnectionSubsystem) Started");
 }
 
 int ConnectionSubsystem::init()
@@ -57,7 +57,7 @@ int ConnectionSubsystem::init()
     // Start event loop thread
     m_EventThread = std::thread(&ConnectionSubsystem::eventThreadWork, this);
 
-    LOG(LogLevel::INFO, "Started connection manager");
+    LOG(LogLevel::INFO, "(ConnectionSubsystem) Stopped");
     return 0;
 }
 
@@ -74,7 +74,7 @@ bool ConnectionSubsystem::add(Connection &connection)
         m_EventCV.notify_one();
         return true;
     }
-    LOG(LogLevel::ERROR, "Connection already exists");
+    LOG(LogLevel::ERROR, "Attempting to add an existing connection");
     return false; // Connection already exists
 }
 
@@ -89,10 +89,10 @@ bool ConnectionSubsystem::remove(int socketFD)
         m_Connections.erase(it);
 
         m_EventCV.notify_one();
-        LOG(LogLevel::DEBUG, "Connection removed for socket ID: " + std::to_string(socketFD));
+        LOG(LogLevel::DEBUG, "Removed socket: " + std::to_string(socketFD));
         return true;
     }
-    LOG(LogLevel::ERROR, "Connection not found for socket ID: " + std::to_string(socketFD));
+    LOG(LogLevel::ERROR, "Attempting to remove non-existent socket: " + std::to_string(socketFD));
     return false; // Connection not found
 }
 
@@ -113,7 +113,7 @@ void ConnectionSubsystem::eventThreadWork()
     // Wait for all threads to be created
     m_ThreadBarrier.arrive_and_wait();
 
-    LOG(LogLevel::DEBUG, "Started event thread")
+    LOG(LogLevel::DEBUG, "(ConnectionSubsystem) Started event thread")
     while (Server::instance().isRunning())
     {
         std::unique_lock lock(m_Mutex);
@@ -127,7 +127,7 @@ void ConnectionSubsystem::eventThreadWork()
         purgeConnections(connectionsToPurge);
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
-    LOG(LogLevel::DEBUG, "Stopped event thread")
+    LOG(LogLevel::DEBUG, "(ConnectionSubsystem) Stopped event thread")
 }
 
 void ConnectionSubsystem::acceptorThreadWork()
@@ -135,7 +135,7 @@ void ConnectionSubsystem::acceptorThreadWork()
     // Wait for all threads to be created
     m_ThreadBarrier.arrive_and_wait();
 
-    LOG(LogLevel::DEBUG, "Started acceptor thread")
+    LOG(LogLevel::DEBUG, "(ConnectionSubsystem) Started acceptor thread")
     while (Server::instance().isRunning())
     {
         if (auto client = reinterpret_cast<ServerConnection *>(m_Connections[m_ServerFD])->acceptClient())
@@ -154,7 +154,7 @@ void ConnectionSubsystem::acceptorThreadWork()
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
-    LOG(LogLevel::DEBUG, "Stopped acceptor thread")
+    LOG(LogLevel::DEBUG, "(ConnectionSubsystem) Stopped acceptor thread")
 }
 
 void ConnectionSubsystem::processMessage(Connection &connection, const std::string &message)

@@ -6,3 +6,4 @@
     - Create a way to keep track of what subsystems are connected to what slots
 - Add Windows support
 - Allow the server to start as a daemon (but don't let the user start it as a daemon after it has already been started)
+- The logger should allow you to specify the sender of the log message

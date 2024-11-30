@@ -3,3 +3,4 @@
 - The Server sub-services use std::barrier, which is not applicable since each sub-service isn't running on its own thread
     - Instead, a CV will have to do. Maybe create a SubService virtual class?
 - I might remove the UserAuthenticator and UserManager classes out so that I can make the Server more abstract and extendable.
+- The server port should be random if not specified by the user upon startup
