@@ -2,25 +2,21 @@
 // Created by msullivan on 11/10/24.
 //
 
-#include "UserManager.h"
-#include "UserAuthenticator.h"
+#include "UserSubsystem.h"
+#include "UserAuthenticationSubsystem.h"
 #include "server/User.h"
 
-UserManager::UserManager(ConnectionManager &connectionManager) :
-                        m_ConnectionManager(connectionManager)
-{}
-
-int UserManager::init()
+int UserSubsystem::init()
 {
     return 0;
 }
 
-UserManager::~UserManager()
+UserSubsystem::~UserSubsystem()
 {
     for (auto &pair : m_Users) delete pair.second;
 }
 
-bool UserManager::add(int socketID, User *user)
+bool UserSubsystem::add(int socketID, User *user)
 {
     if (m_Users.find(socketID) == m_Users.end())
     {
@@ -30,7 +26,7 @@ bool UserManager::add(int socketID, User *user)
     return false; // User already exists
 }
 
-bool UserManager::remove(int socketID)
+bool UserSubsystem::remove(int socketID)
 {
     auto it = m_Users.find(socketID);
     if (it == m_Users.end())
@@ -40,19 +36,19 @@ bool UserManager::remove(int socketID)
     return true;
 }
 
-User *UserManager::get(int socketFD)
+User *UserSubsystem::get(int socketFD)
 {
     auto it = m_Users.find(socketFD);
     return (it != m_Users.end()) ? it->second : nullptr;
 }
 
-User *UserManager::operator[](int socketID)
+User *UserSubsystem::operator[](int socketID)
 {
     return get(socketID);
 }
 
 // Make this work with an individual connection
-bool UserManager::authenticateConnection(int connectionFD, const std::string &username, const std::string &password)
-{
-    return m_UserAuthenticator.authenticate(username, password);
-}
+//bool UserSubsystem::authenticateConnection(int connectionFD, const std::string &username, const std::string &password)
+//{
+//    return m_UserAuthenticator.authenticate(username, password);
+//}

@@ -1,7 +1,5 @@
 #include "Client.h"
-#include <iostream>
-#include <sstream>
-#include <unistd.h>
+#include "common/PCH.h"
 
 void printUsage() {
     std::cout << "Usage: myprogram [-h hostname] [-p port]" << std::endl;

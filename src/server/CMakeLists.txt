@@ -10,8 +10,11 @@ add_executable(ChatApplicationServer
 # Link dependencies to the server executable
 target_link_libraries(ChatApplicationServer
         ChatApplicationCommon
-        ChatApplicationSubsystems
-        ChatApplicationCommands
+        ConnectionSubsystem
+        MessageSubsystem
+        BroadcastSubsystem
+        CommandSubsystem
+        UserSubsystem
 )
 
 add_subdirectory(subsystems)

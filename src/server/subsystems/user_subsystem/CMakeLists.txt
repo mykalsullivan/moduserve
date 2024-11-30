@@ -1,8 +1,6 @@
-
-
 add_library(UserSubsystem STATIC
-        UserAuthenticator.cpp
-        UserManager.cpp
+        UserAuthenticationSubsystem.cpp
+        UserSubsystem.cpp
 )
 
 find_package(PkgConfig REQUIRED)

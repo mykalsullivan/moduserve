@@ -1,7 +1,7 @@
-add_library(MessageProcessorSubsystem STATIC
-        MessageProcessor.cpp
+add_library(MessageSubsystem STATIC
+        MessageSubsystem.cpp
 )
 
-target_link_libraries(MessageProcessorSubsystem
+target_link_libraries(MessageSubsystem
         ChatApplicationCommon
 )

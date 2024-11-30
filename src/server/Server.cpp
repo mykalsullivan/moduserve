@@ -4,17 +4,15 @@
 
 #include "Server.h"
 #include "ServerConnection.h"
-#include "../common/Logger.h"
-#include <iostream>
+#include "common/PCH.h"
 #include <filesystem>
 
-#include "subservices/Subsystem.h"
-#include "subservices/ConnectionManager.h"
-#include "subservices/MessageProcessor.h"
-#include "subservices/BroadcastManager.h"
-#include "subservices/CommandRegistry.h"
-#include "subservices/UserManager.h"
-#include "subservices/UserAuthenticator.h"
+#include "subsystems/Subsystem.h"
+#include "subsystems/connection_subsystem/ConnectionSubsystem.h"
+#include "subsystems/message_subsystem/MessageSubsystem.h"
+#include "subsystems/broadcast_subsystem/BroadcastSubsystem.h"
+#include "subsystems/command_subsystem/CommandSubsystem.h"
+#include "subsystems/user_subsystem/UserSubsystem.h"
 
 void printUsage();
 int port = 0;
@@ -124,11 +122,11 @@ int Server::init(int argc, char **argv)
                         std::to_string(serverConnection->getPort()) + ')');
 
     // 8. Register built-in subsystems
-    registerSubsystem(std::make_unique<ConnectionManager>(*m_BroadcastManager, *m_MessageProcessor, *serverConnection));
-    registerSubsystem(std::make_unique<MessageProcessor>(*m_ConnectionManager, *m_BroadcastManager, *m_CommandRegistry));
-    registerSubsystem(std::make_unique<BroadcastManager>(*m_ConnectionManager, *m_MessageProcessor));
-    registerSubsystem(std::make_unique<CommandRegistry>());
-    registerSubsystem(std::make_unique<UserManager>(*m_ConnectionManager, *m_UserAuthenticator));
+    registerSubsystem(std::make_unique<ConnectionSubsystem>(*serverConnection));
+    registerSubsystem(std::make_unique<MessageSubsystem>());
+    registerSubsystem(std::make_unique<BroadcastSubsystem>());
+    registerSubsystem(std::make_unique<CommandSubsystem>());
+    registerSubsystem(std::make_unique<UserSubsystem>());
 
     // 9. Initialize subsystems
     for (auto &ss : m_Subservices)
@@ -145,13 +143,12 @@ void Server::registerSubsystem(std::unique_ptr<Subsystem> subservice)
     // Ensure thread safety with a lock
     std::lock_guard lock(m_Mutex);
 
-    if (m_Subservices.contains(serviceName))
+    if (!m_Subservices.contains(serviceName))
     {
         m_Subservices[serviceName] = std::move(subservice);
         return;
     }
-
-    throw std::runtime_error("Subservice with name '" + serviceName + "' is already registered.");
+    throw std::runtime_error("Subsystem with name '" + serviceName + "' is already registered.");
 }
 
 Subsystem *Server::subsystem(const std::string &name) const
@@ -162,7 +159,7 @@ Subsystem *Server::subsystem(const std::string &name) const
     auto it = m_Subservices.find(name);
     if (it != m_Subservices.end())
         return it->second.get();
-    throw std::runtime_error("Subservice with name \"" + name + "\" not found.");
+    throw std::runtime_error("Subsystem with name \"" + name + "\" not found.");
 }
 
 

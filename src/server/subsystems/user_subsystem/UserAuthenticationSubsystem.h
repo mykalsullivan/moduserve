@@ -7,17 +7,17 @@
 #include <string>
 #include <pqxx/pqxx>
 
-class UserAuthenticator : public Subsystem {
+class UserAuthenticationSubsystem : public Subsystem {
 public:
-    UserAuthenticator();
-    ~UserAuthenticator() override;
+    UserAuthenticationSubsystem();
+    ~UserAuthenticationSubsystem() override;
 
 private:
     pqxx::connection *m_DatabaseConnection;
 
 public:
     int init() override;
-    [[nodiscard]] constexpr std::string name() const override { return "UserAuthenticator"; }
+    [[nodiscard]] constexpr std::string name() const override { return "UserAuthenticationSubsystem"; }
 
     bool sync();
     [[nodiscard]] int registerUser(const std::string &username, const std::string &password);

@@ -1,5 +1,5 @@
 add_library(BroadcastSubsystem STATIC
-        BroadcastManager.cpp
+        BroadcastSubsystem.cpp
 )
 
 target_link_libraries(BroadcastSubsystem

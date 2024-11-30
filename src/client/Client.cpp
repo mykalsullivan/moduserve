@@ -4,14 +4,6 @@
 
 #include "Client.h"
 
-#include <cstring>
-#include <iostream>
-#include <thread>
-#include <arpa/inet.h>
-#include <poll.h>
-#include <fcntl.h>
-#include <sstream>
-
 Client::Client(int argc, char *argv[]) : m_Running(true)
 {
     handleUserInput();

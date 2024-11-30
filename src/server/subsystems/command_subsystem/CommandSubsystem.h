@@ -11,18 +11,18 @@
 // Forward declaration(s)
 class Command;
 
-class CommandRegistry : public Subsystem {
+class CommandSubsystem : public Subsystem {
     using CommandFactory = std::function<Command *()>;
 public:
-    CommandRegistry() = default;
-    ~CommandRegistry() override = default;
+    CommandSubsystem() = default;
+    ~CommandSubsystem() override = default;
 
 private:
     std::unordered_map<std::string, CommandFactory> m_CommandFactories;
 
 public:
     int init() override;
-    [[nodiscard]] constexpr std::string name() const override { return "CommandRegistry"; }
+    [[nodiscard]] constexpr std::string name() const override { return "CommandSubsystem"; }
 
     auto begin() const { return m_CommandFactories.begin(); }
     auto end() const { return m_CommandFactories.end(); }

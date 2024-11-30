@@ -2,7 +2,7 @@
 // Created by msullivan on 11/29/24.
 //
 
-#include "CommandRegistry.h"
+#include "CommandSubsystem.h"
 #include "server/commands/Command.h"
 #include "common/Logger.h"
 #include <dlfcn.h>
@@ -11,7 +11,7 @@
 // #include "commands/StopCommand.h"
 // #include "commands/HelpCommand.h"
 
-int CommandRegistry::init()
+int CommandSubsystem::init()
 {
     std::string commandLibPath = "/home/msullivan/Development/GitHub/ChatApplication/";
 
@@ -23,7 +23,7 @@ int CommandRegistry::init()
     return 0;
 }
 
-void CommandRegistry::loadCommand(const std::string &libPath)
+void CommandSubsystem::loadCommand(const std::string &libPath)
 {
     void *handle = dlopen(libPath.c_str(), RTLD_LAZY);
 
@@ -57,12 +57,12 @@ void CommandRegistry::loadCommand(const std::string &libPath)
     LOG(LogLevel::INFO, "Loaded command: \"" + commandName + '\"')
 }
 
-void CommandRegistry::registerCommand(const std::string &name, const CommandFactory &factory)
+void CommandSubsystem::registerCommand(const std::string &name, const CommandFactory &factory)
 {
     m_CommandFactories[name] = factory;
 }
 
-Command *CommandRegistry::createCommand(const std::string& name)
+Command *CommandSubsystem::createCommand(const std::string& name)
 {
     if (m_CommandFactories.find(name) != m_CommandFactories.end())
         return m_CommandFactories[name]();

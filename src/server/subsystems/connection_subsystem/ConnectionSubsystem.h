@@ -13,22 +13,15 @@
 #include <barrier>
 
 // Forward declaration(s)
-class BroadcastManager;
-class ServerConnection;
-class MessageProcessor;
 class Connection;
+class ServerConnection;
 
-class ConnectionManager : public Subsystem {
+class ConnectionSubsystem : public Subsystem {
 public:
-    ConnectionManager(BroadcastManager &broadcastManager,
-                        MessageProcessor &messageProcessor,
-                        ServerConnection &serverConnection);
-    ~ConnectionManager() override;
+    explicit ConnectionSubsystem(ServerConnection &serverConnection);
+    ~ConnectionSubsystem() override;
 
 private:
-    BroadcastManager &m_BroadcastManager;
-    MessageProcessor &m_MessageProcessor;
-
     std::unordered_map<int, Connection *> m_Connections;
     int m_ServerFD;
 
@@ -41,7 +34,7 @@ private:
 
 public:
     int init() override;
-    [[nodiscard]] constexpr std::string name() const override { return "ConnectionManager"; }
+    [[nodiscard]] constexpr std::string name() const override { return "ConnectionSubsystem"; }
 
     [[nodiscard]] size_t size() const { return m_Connections.size(); }
     [[nodiscard]] bool empty() const { return m_Connections.empty(); }

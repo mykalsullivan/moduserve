@@ -3,7 +3,7 @@
 //
 
 #pragma once
-#include "../common/Connection.h"
+#include "common/Connection.h"
 #include <thread>
 #include <atomic>
 

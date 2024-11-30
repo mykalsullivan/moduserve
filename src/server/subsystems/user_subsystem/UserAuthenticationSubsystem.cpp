@@ -2,20 +2,20 @@
 // Created by msullivan on 11/11/24.
 //
 
-#include "UserAuthenticator.h"
+#include "UserAuthenticationSubsystem.h"
 #include "common/Logger.h"
 #include <iomanip>
 #include <openssl/sha.h>
 
-UserAuthenticator::UserAuthenticator() : m_DatabaseConnection(nullptr)
+UserAuthenticationSubsystem::UserAuthenticationSubsystem() : m_DatabaseConnection(nullptr)
 {}
 
-UserAuthenticator::~UserAuthenticator()
+UserAuthenticationSubsystem::~UserAuthenticationSubsystem()
 {
     delete m_DatabaseConnection;
 }
 
-int UserAuthenticator::init()
+int UserAuthenticationSubsystem::init()
 {
     std::string connectionString = "dbname=practice_server_user_db user=msullivan password=Mpwfsqli$ hostaddr=127.0.0.1 port=5432";
     try
@@ -41,7 +41,7 @@ int UserAuthenticator::init()
     return 0;
 }
 
-bool UserAuthenticator::authenticate(const std::string &username, const std::string &password)
+bool UserAuthenticationSubsystem::authenticate(const std::string &username, const std::string &password)
 {
     if (m_DatabaseConnection == nullptr)
     {
@@ -76,7 +76,7 @@ bool UserAuthenticator::authenticate(const std::string &username, const std::str
     return false;
 }
 
-bool UserAuthenticator::usernameExists(const std::string &username) const
+bool UserAuthenticationSubsystem::usernameExists(const std::string &username) const
 {
     if (m_DatabaseConnection == nullptr)
     {
@@ -98,7 +98,7 @@ bool UserAuthenticator::usernameExists(const std::string &username) const
     return false;
 }
 
-std::string UserAuthenticator::hashPassword(const std::string &password)
+std::string UserAuthenticationSubsystem::hashPassword(const std::string &password)
 {
     unsigned char hash[SHA256_DIGEST_LENGTH];
     SHA256_CTX sha256_ctx;

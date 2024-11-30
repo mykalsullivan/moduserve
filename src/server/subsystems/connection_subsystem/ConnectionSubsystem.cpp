@@ -2,27 +2,22 @@
 // Created by msullivan on 11/10/24.
 //
 
-#include "ConnectionManager.h"
-#include "server/subsystems/broadcast_subsystem/BroadcastManager.h"
-#include "server/subsystems/message_subsystem/MessageProcessor.h"
+#include "ConnectionSubsystem.h"
+#include "server/subsystems/broadcast_subsystem/BroadcastSubsystem.h"
+#include "server/subsystems/message_subsystem/MessageSubsystem.h"
 #include "server/ServerConnection.h"
 #include "server/Server.h"
 #include "common/Logger.h"
 #include <barrier>
 
-ConnectionManager::ConnectionManager(BroadcastManager &broadcastManager,
-                                    MessageProcessor &messageProcessor,
-                                    ServerConnection &serverConnection) :
-                                    m_BroadcastManager(broadcastManager),
-                                    m_MessageProcessor(messageProcessor),
-                                    m_ThreadBarrier(2)
+ConnectionSubsystem::ConnectionSubsystem(ServerConnection &serverConnection) : m_ThreadBarrier(2)
 {
     // Set server connection
     add(serverConnection);
     m_ServerFD = serverConnection.getFD();
 }
 
-ConnectionManager::~ConnectionManager()
+ConnectionSubsystem::~ConnectionSubsystem()
 {
     // Stop and join the event loop
     m_EventCV.notify_all();
@@ -54,19 +49,19 @@ ConnectionManager::~ConnectionManager()
     LOG(LogLevel::INFO, "Stopped connection manager");
 }
 
-int ConnectionManager::init()
+int ConnectionSubsystem::init()
 {
     // Start acceptor thread
-    m_AcceptorThread = std::thread(&ConnectionManager::acceptorThreadWork, this);
+    m_AcceptorThread = std::thread(&ConnectionSubsystem::acceptorThreadWork, this);
 
     // Start event loop thread
-    m_EventThread = std::thread(&ConnectionManager::eventThreadWork, this);
+    m_EventThread = std::thread(&ConnectionSubsystem::eventThreadWork, this);
 
     LOG(LogLevel::INFO, "Started connection manager");
     return 0;
 }
 
-bool ConnectionManager::add(Connection &connection)
+bool ConnectionSubsystem::add(Connection &connection)
 {
     std::lock_guard lock(m_Mutex);
 
@@ -83,7 +78,7 @@ bool ConnectionManager::add(Connection &connection)
     return false; // Connection already exists
 }
 
-bool ConnectionManager::remove(int socketFD)
+bool ConnectionSubsystem::remove(int socketFD)
 {
     std::lock_guard lock(m_Mutex);
 
@@ -101,19 +96,19 @@ bool ConnectionManager::remove(int socketFD)
     return false; // Connection not found
 }
 
-Connection *ConnectionManager::get(int fd)
+Connection *ConnectionSubsystem::get(int fd)
 {
     std::lock_guard lock(m_Mutex);
     auto it = m_Connections.find(fd);
     return (it != m_Connections.end()) ? it->second : nullptr;
 }
 
-Connection *ConnectionManager::operator[](int fd)
+Connection *ConnectionSubsystem::operator[](int fd)
 {
     return get(fd);
 }
 
-void ConnectionManager::eventThreadWork()
+void ConnectionSubsystem::eventThreadWork()
 {
     // Wait for all threads to be created
     m_ThreadBarrier.arrive_and_wait();
@@ -135,7 +130,7 @@ void ConnectionManager::eventThreadWork()
     LOG(LogLevel::DEBUG, "Stopped event thread")
 }
 
-void ConnectionManager::acceptorThreadWork()
+void ConnectionSubsystem::acceptorThreadWork()
 {
     // Wait for all threads to be created
     m_ThreadBarrier.arrive_and_wait();
@@ -148,8 +143,8 @@ void ConnectionManager::acceptorThreadWork()
             if (add(*client))
             {
                 LOG(LogLevel::INFO, "Client @ " + client->getIP() + ':' + std::to_string(client->getPort()) + " connected");
-                m_BroadcastManager.broadcastMessage(*m_Connections[m_ServerFD],
-                    "Client @ " + std::to_string(client->getFD()) + " (" + client->getIP() + ':' + std::to_string(client->getPort()) + ") connected");
+                //m_BroadcastManager.broadcastMessage(*m_Connections[m_ServerFD],
+                //    "Client @ " + std::to_string(client->getFD()) + " (" + client->getIP() + ':' + std::to_string(client->getPort()) + ") connected");
             }
             else
             {
@@ -162,12 +157,12 @@ void ConnectionManager::acceptorThreadWork()
     LOG(LogLevel::DEBUG, "Stopped acceptor thread")
 }
 
-void ConnectionManager::processMessage(Connection &connection, const std::string &message)
+void ConnectionSubsystem::processMessage(Connection &connection, const std::string &message)
 {
-    m_MessageProcessor.handleMessage(connection, message);
+    //m_MessageProcessor.handleMessage(connection, message);
 }
 
-void ConnectionManager::validateConnections()
+void ConnectionSubsystem::validateConnections()
 {
     std::vector<int> connectionsToPurge;
     {
@@ -187,7 +182,7 @@ void ConnectionManager::validateConnections()
     purgeConnections(connectionsToPurge);
 }
 
-std::vector<int> ConnectionManager::processConnections()
+std::vector<int> ConnectionSubsystem::processConnections()
 {
     std::lock_guard lock(m_Mutex);
 
@@ -218,7 +213,7 @@ std::vector<int> ConnectionManager::processConnections()
     return connectionsToPurge;
 }
 
-void ConnectionManager::purgeConnections(const std::vector<int> &connectionsToPurge)
+void ConnectionSubsystem::purgeConnections(const std::vector<int> &connectionsToPurge)
 {
     for (int fd : connectionsToPurge) remove(fd);
 }

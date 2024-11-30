@@ -9,21 +9,19 @@
 #include <mutex>
 
 // Forward declaration(s)
-class ConnectionManager;
 class User;
 
-class UserManager : public Subsystem {
+class UserSubsystem : public Subsystem {
 public:
-    explicit UserManager(ConnectionManager &connectionManager);
-    ~UserManager() override;
+    UserSubsystem() = default;
+    ~UserSubsystem() override;
 
 private:
-    ConnectionManager &m_ConnectionManager;
     std::unordered_map<int, User *> m_Users;
 
 public:
     int init() override;
-    [[nodiscard]] constexpr std::string name() const override { return "UserManager"; }
+    [[nodiscard]] constexpr std::string name() const override { return "UserSubsystem"; }
 
     bool add(int socketID, User *user);
     bool remove(int connectionID);
