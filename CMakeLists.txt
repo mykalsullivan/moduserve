@@ -28,6 +28,10 @@ add_executable(ChatApplicationServer
         src/server/BroadcastManager.h
         src/server/BroadcastManager.cpp
         src/server/MessageProcessor.h
+        src/server/CommandRegistry.h
+        src/server/CommandRegistry.cpp
+        #src/server/commands/HelpCommand.cpp
+        #src/server/commands/StopCommand.cpp
 )
 
 target_link_libraries(ChatApplicationServer
@@ -42,5 +46,8 @@ add_executable(ChatApplicationClient
         src/client/ClientConnection.cpp
         src/Connection.cpp
         src/Logger.cpp
-        src/CommandManager.cpp
+        src/server/commands/StopCommand.h
+        src/server/commands/Command.h
+        src/server/commands/StopCommand.cpp
+        src/server/commands/HelpCommand.cpp
 )

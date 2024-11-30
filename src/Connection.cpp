@@ -8,7 +8,6 @@
 #include <fcntl.h>
 #include <arpa/inet.h>
 #include <unistd.h>
-#include <poll.h>
 
 Connection::Connection()
     : m_FD(-1), m_Address()
@@ -144,11 +143,16 @@ bool Connection::isValid() const
 
 bool Connection::hasPendingData() const
 {
-    pollfd pfd { m_FD, POLLIN, 0 };
-    int result = poll(&pfd, 1, 0); // Non-blocking check for data
+    if (m_FD == -1) return false;
+    fd_set readFDs;
+    timeval timeout = { 0, 0 };
+
+    FD_ZERO(&readFDs);      // Clear FD set
+    FD_SET(m_FD, &readFDs); // Add m_FD to the set
 
     // Return true if there is pending data
-    if (result >= 0 && (pfd.revents & POLLIN)) return true;
+    int result = select(m_FD + 1, &readFDs, nullptr, nullptr, &timeout);
+    if (result > 0 && FD_ISSET(m_FD, &readFDs)) return true;
 
     // Return false if there is either an error or there is no pending data
     return false;

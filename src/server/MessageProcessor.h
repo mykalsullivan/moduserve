@@ -3,24 +3,32 @@
 //
 
 #pragma once
-#include "../Connection.h"
 #include <string>
+#include <barrier>
 
 // Forward declaration(s)
-class Server;
+class ConnectionManager;
+class BroadcastManager;
+class CommandRegistry;
+class Connection;
 class Message;
 
 class MessageProcessor {
 public:
-    explicit MessageProcessor(Server &server);
+    explicit MessageProcessor(ConnectionManager &connectionManager,
+                                BroadcastManager &broadcastManager,
+                                CommandRegistry &commandRegistry,
+                                std::barrier<> &serviceBarrier);
     ~MessageProcessor() = default;
 
 private:
-    Server &m_Server;
+    ConnectionManager &m_ConnectionManager;
+    CommandRegistry &m_CommandRegistry;
+    BroadcastManager &m_BroadcastManager;
 
 public:
     void handleMessage(Connection &sender, const std::string &message);
 
 private:
-    void parseMessage(Connection &sender, const std::string &message);
+    void parseMessage(Connection &sender, const std::string &message) const;
 };

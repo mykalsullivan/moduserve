@@ -3,13 +3,24 @@
 //
 
 #include "ConnectionManager.h"
+#include "BroadcastManager.h"
+#include "MessageProcessor.h"
 #include "ServerConnection.h"
 #include "Server.h"
-#include "MessageProcessor.h"
 #include "../Logger.h"
 
-ConnectionManager::ConnectionManager(Server &server, ServerConnection &serverConnection) : m_Server(server)
+ConnectionManager::ConnectionManager(BroadcastManager &broadcastManager,
+                                    MessageProcessor &messageProcessor,
+                                    ServerConnection &serverConnection,
+                                    std::barrier<> &serviceBarrier) :
+                                    m_BroadcastManager(broadcastManager),
+                                    m_MessageProcessor(messageProcessor)
 {
+    // Wait for all services to be initialized
+    LOG(LogLevel::DEBUG, "Arrived at ConnectionManager service barrier")
+    serviceBarrier.arrive_and_wait();
+    LOG(LogLevel::DEBUG, "Moved past ConnectionManager service barrier")
+
     // Set server connection
     addConnection(serverConnection);
     m_ServerFD = serverConnection.getFD();
@@ -104,31 +115,34 @@ Connection *ConnectionManager::operator[](int fd)
 
 void ConnectionManager::eventThreadWork()
 {
-    while (m_Server.m_Running)
+    LOG(LogLevel::DEBUG, "Started event thread")
+    while (Server::instance().isRunning())
     {
         std::unique_lock lock(m_Mutex);
         m_EventCV.wait(lock, [this] {
-            return !m_Server.m_Running || m_Connections.size() > 1;
+            return !Server::instance().isRunning() || m_Connections.size() > 1;
         });
-        if (!m_Server.m_Running) break;
+        if (!Server::instance().isRunning()) break;
         lock.unlock();
 
         std::vector<int> connectionsToPurge = processConnections();
         purgeConnections(connectionsToPurge);
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
+    LOG(LogLevel::DEBUG, "Stopped event thread")
 }
 
 void ConnectionManager::acceptorThreadWork()
 {
-    while (m_Server.m_Running)
+    LOG(LogLevel::DEBUG, "Started acceptor thread")
+    while (Server::instance().isRunning())
     {
         if (auto client = reinterpret_cast<ServerConnection *>(m_Connections[m_ServerFD])->acceptClient())
         {
             if (addConnection(*client))
             {
                 LOG(LogLevel::INFO, "Client @ " + client->getIP() + ':' + std::to_string(client->getPort()) + " connected");
-                m_Server.m_BroadcastManager.broadcastMessage(*m_Connections[m_ServerFD],
+                m_BroadcastManager.broadcastMessage(*m_Connections[m_ServerFD],
                     "Client @ " + std::to_string(client->getFD()) + " (" + client->getIP() + ':' + std::to_string(client->getPort()) + ") connected");
             }
             else
@@ -139,11 +153,12 @@ void ConnectionManager::acceptorThreadWork()
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
+    LOG(LogLevel::DEBUG, "Stopped acceptor thread")
 }
 
 void ConnectionManager::processMessage(Connection &connection, const std::string &message)
 {
-    m_Server.m_MessageHandler.handleMessage(connection, message);
+    m_MessageProcessor.handleMessage(connection, message);
 }
 
 void ConnectionManager::validateConnections()

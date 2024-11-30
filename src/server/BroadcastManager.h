@@ -4,18 +4,23 @@
 
 #pragma once
 #include <string>
+#include <barrier>
 
 // Forward declaration(s)
-class Server;
+class ConnectionManager;
+class MessageProcessor;
 class Connection;
 
 class BroadcastManager {
 public:
-    explicit BroadcastManager(Server &server);
+    BroadcastManager(ConnectionManager &connectionManager,
+                    MessageProcessor &messageProcessor,
+                    std::barrier<> &serviceBarrier);
     ~BroadcastManager() = default;
 
 private:
-    Server &m_Server;
+    ConnectionManager &m_ConnectionManager;
+    MessageProcessor &m_MessageProcessor;
 
 public:
     void broadcastMessage(Connection &sender, const std::string &message);

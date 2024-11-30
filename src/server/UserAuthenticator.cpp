@@ -7,8 +7,11 @@
 #include <iomanip>
 #include <openssl/sha.h>
 
-UserAuthenticator::UserAuthenticator(Server &server) : m_Server(server)
+UserAuthenticator::UserAuthenticator(std::barrier<> &serviceBarrier)
 {
+    // Wait for all services to be initialized
+    serviceBarrier.arrive_and_wait();
+
     std::string connectionString = "dbname=practice_server_user_db user=msullivan password=Mpwfsqli$ hostaddr=127.0.0.1 port=5432";
     try
     {

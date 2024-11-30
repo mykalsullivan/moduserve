@@ -5,8 +5,11 @@
 #include "Server.h"
 #include "ServerConnection.h"
 #include "ConnectionManager.h"
-#include "UserAuthenticator.h"
+#include "MessageProcessor.h"
+#include "BroadcastManager.h"
+#include "CommandRegistry.h"
 #include "UserManager.h"
+#include "UserAuthenticator.h"
 #include "../Logger.h"
 #include <iostream>
 
@@ -19,11 +22,11 @@ void printUsage()
     std::cout << "  -h             Display this help message" << std::endl;
 }
 
-int processArgs(int argc, char **argv)
+int Server::init(int argc, char **argv)
 {
+    // 1. Parse command-line arguments
     int opt;
     while ((opt = getopt(argc, argv, "p:h")) != -1)
-    {
         switch (opt)
         {
             case 'p':
@@ -31,26 +34,17 @@ int processArgs(int argc, char **argv)
             break;
             case 'h':
                 printUsage();
-            break;
+            return 0;
             case '?':
             default:
                 printUsage();
             return -1;
         }
-    }
-    return 0;
-}
 
-ServerConnection *init(int argc, char **argv)
-{
-    LOG(LogLevel::INFO, "Starting ChatApplicationServer...")
-    if (processArgs(argc, argv) < 0)
-        exit(EXIT_FAILURE);
-
-    // 1. Create server connection
+    // 2. Create server connection
     auto serverConnection = new ServerConnection();
 
-    // 2. Create socket
+    // 3. Create socket
     if (!serverConnection->createSocket()) {
         LOG(LogLevel::ERROR, "Failed to create socket");
         delete serverConnection;
@@ -58,7 +52,7 @@ ServerConnection *init(int argc, char **argv)
     }
     //LOG(LogLevel::INFO, "Created server socket: " + std::to_string(serverConnection->getSocket()));
 
-    // 2. Create server address
+    // 4. Create server address
     if (!serverConnection->createAddress(port)) {
         LOG(LogLevel::ERROR, "Failed to create address");
         delete serverConnection;
@@ -66,7 +60,7 @@ ServerConnection *init(int argc, char **argv)
     }
     //LOG(LogLevel::INFO, "Successfully created server address (listening on all interfaces)");
 
-    // 3. Bind socket to address
+    // 5. Bind socket to address
     if (!serverConnection->bindAddress()) {
         LOG(LogLevel::ERROR, "Failed to bind address");
         delete serverConnection;
@@ -74,7 +68,7 @@ ServerConnection *init(int argc, char **argv)
     }
     //LOG(LogLevel::INFO, "Successfully bound to address (" + serverConnection->getIP() + ':' + std::to_string(serverConnection->getPort()) + ')');
 
-    // 5. Listen to incoming connections
+    // 6. Listen to incoming connections
     if (!serverConnection->startListening()) {
         LOG(LogLevel::ERROR, "Cannot listen to incoming connections");
         delete serverConnection;
@@ -82,19 +76,35 @@ ServerConnection *init(int argc, char **argv)
     }
     LOG(LogLevel::INFO, "Listening for new connections on " + serverConnection->getIP() + ':' +
                         std::to_string(serverConnection->getPort()) + ')');
-    return serverConnection;
+
+    // 7. Create sub-services
+    m_ConnectionManager = std::make_unique<ConnectionManager>(*m_BroadcastManager, *m_MessageProcessor, *serverConnection, m_ServiceBarrier);
+    m_MessageProcessor = std::make_unique<MessageProcessor>(*m_ConnectionManager, *m_BroadcastManager, *m_CommandRegistry, m_ServiceBarrier);
+    m_BroadcastManager = std::make_unique<BroadcastManager>(*m_ConnectionManager, *m_MessageProcessor, m_ServiceBarrier);
+    m_CommandRegistry = std::make_unique<CommandRegistry>(m_ServiceBarrier);
+    m_UserManager = std::make_unique<UserManager>(*m_ConnectionManager, *m_UserAuthenticator, m_ServiceBarrier);
+    m_UserAuthenticator = std::make_unique<UserAuthenticator>(m_ServiceBarrier);
+    LOG(LogLevel::INFO, "All sub-services initialized");
+
+    return 0;
 }
 
-Server::Server(int argc, char **argv) : m_Running(true),
-                                        m_ConnectionManager(*this, *init(argc, argv)),
-                                        m_MessageHandler(*this),
-                                        m_BroadcastManager(*this),
-                                        m_UserManager(*this),
-                                        m_UserAuthenticator(*this)
+Server::Server() : m_Running(false), m_ServiceBarrier(6)
 {}
 
-int Server::run()
+Server &Server::instance()
 {
+    static Server instance;
+    return instance;
+}
+
+int Server::run(int argc, char **argv)
+{
+    LOG(LogLevel::INFO, "Starting ChatApplicationServer...")
+    
+    int initResult = init(argc, argv);
+    if (initResult != 0) return initResult;
+
     std::unique_lock lock(m_Mutex);
     m_CV.wait(lock, [this] {
         return !m_Running;

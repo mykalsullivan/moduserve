@@ -3,19 +3,25 @@
 //
 
 #include "UserManager.h"
-#include "Server.h"
 #include "UserAuthenticator.h"
+#include "../User.h"
 
-UserManager::UserManager(Server &server) : m_Server(server)
-{}
+UserManager::UserManager(ConnectionManager &connectionManager,
+                        UserAuthenticator &userAuthenticator,
+                        std::barrier<> &serviceBarrier) :
+                        m_ConnectionManager(connectionManager),
+                        m_UserAuthenticator(userAuthenticator)
+{
+    // Wait for all services to be initialized
+    serviceBarrier.arrive_and_wait();
+}
 
 UserManager::~UserManager()
 {
     std::lock_guard lock(m_UserMutex);
 
     // Clean up
-    for (auto &pair : m_Users)
-        delete pair.second;
+    for (auto &pair : m_Users) delete pair.second;
 }
 
 bool UserManager::addUser(int socketID, User *user)
@@ -58,5 +64,5 @@ User *UserManager::operator[](int socketID)
 bool UserManager::authenticateConnection(int connectionFD, const std::string &username, const std::string &password)
 {
     std::lock_guard lock(m_UserMutex);
-    return m_Server.m_UserAuthenticator.authenticate(username, password);
+    return m_UserAuthenticator.authenticate(username, password);
 }

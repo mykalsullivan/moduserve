@@ -3,20 +3,26 @@
 //
 
 #include "BroadcastManager.h"
-#include "Server.h"
 #include "ConnectionManager.h"
 #include "../Connection.h"
 #include "../Logger.h"
 
-BroadcastManager::BroadcastManager(Server &server) : m_Server(server)
-{}
+BroadcastManager::BroadcastManager(ConnectionManager &connectionManager,
+                                    MessageProcessor &messageProcessor,
+                                    std::barrier<> &serviceBarrier) :
+                                    m_ConnectionManager(connectionManager),
+                                    m_MessageProcessor(messageProcessor)
+{
+    // Wait for all services to be initialized
+    serviceBarrier.arrive_and_wait();
+}
 
 void BroadcastManager::broadcastMessage(Connection &sender, const std::string &message)
 {
-    for (auto &[fd, connection] : m_Server.m_ConnectionManager)
+    for (auto &[fd, connection] : m_ConnectionManager)
     {
         // Skip server and sender
-        if (fd == m_Server.m_ConnectionManager.m_ServerFD || fd == sender.getFD() || !connection) continue;
+        if (fd == m_ConnectionManager.serverFD() || fd == sender.getFD() || !connection) continue;
 
         // Attempt to send message
         if (connection->sendData(message))

@@ -3,21 +3,26 @@
 //
 
 #pragma once
-#include "../User.h"
 #include <string>
 #include <unordered_map>
 #include <mutex>
+#include <barrier>
 
 // Forward declaration(s)
-class Server;
+class ConnectionManager;
+class UserAuthenticator;
+class User;
 
 class UserManager {
 public:
-    explicit UserManager(Server &server);
+    UserManager(ConnectionManager &connectionManager,
+                UserAuthenticator &userAuthenticator,
+                std::barrier<> &serviceBarrier);
     ~UserManager();
 
 private:
-    Server &m_Server;
+    ConnectionManager &m_ConnectionManager;
+    UserAuthenticator &m_UserAuthenticator;
     std::unordered_map<int, User *> m_Users;
     mutable std::mutex m_UserMutex;
 

@@ -3,26 +3,31 @@
 //
 
 #pragma once
-#include "../Connection.h"
-#include "ServerConnection.h"
 #include <unordered_map>
 #include <string>
 #include <vector>
 #include <thread>
 #include <mutex>
 #include <condition_variable>
+#include <barrier>
 
 // Forward declaration(s)
-class Server;
+class BroadcastManager;
+class ServerConnection;
+class MessageProcessor;
+class Connection;
 
 class ConnectionManager {
-    friend class BroadcastManager;
 public:
-    ConnectionManager(Server &server, ServerConnection &serverConnection);
+    ConnectionManager(BroadcastManager &broadcastManager,
+                        MessageProcessor &messageProcessor,
+                        ServerConnection &serverConnection,
+                        std::barrier<> &serviceBarrier);
     ~ConnectionManager();
 
 private:
-    Server &m_Server;
+    BroadcastManager &m_BroadcastManager;
+    MessageProcessor &m_MessageProcessor;
 
     std::unordered_map<int, Connection *> m_Connections;
     int m_ServerFD;
@@ -38,7 +43,7 @@ public:
     bool empty() const { return m_Connections.empty(); }
     std::unordered_map<int, Connection *>::iterator begin() { return m_Connections.begin(); }
     std::unordered_map<int, Connection *>::iterator end() { return m_Connections.end(); }
-    int getServerFD() const { return m_ServerFD; }
+    int serverFD() const { return m_ServerFD; }
 
     bool addConnection(Connection &connection);
     bool removeConnection(int socketFD);

@@ -5,24 +5,24 @@
 #pragma once
 #include <string>
 #include <pqxx/pqxx>
+#include <barrier>
 
 // Forward declaration(s)
 class Server;
 
 class UserAuthenticator {
 public:
-    explicit UserAuthenticator(Server &server);
+    explicit UserAuthenticator(std::barrier<> &serviceBarrier);
     ~UserAuthenticator();
 
 private:
-    Server &m_Server;
     pqxx::connection *m_DatabaseConnection;
 
 public:
     bool sync();
-    int registerUser(const std::string &username, const std::string &password);
-    bool authenticate(const std::string &username, const std::string &password);
-    bool usernameExists(const std::string &username) const;
+    [[nodiscard]] int registerUser(const std::string &username, const std::string &password);
+    [[nodiscard]] bool authenticate(const std::string &username, const std::string &password);
+    [[nodiscard]] bool usernameExists(const std::string &username) const;
 
 private:
     std::string hashPassword(const std::string &password);

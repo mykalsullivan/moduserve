@@ -4,41 +4,47 @@
 
 #include "MessageProcessor.h"
 #include "ConnectionManager.h"
-#include "UserManager.h"
+#include "BroadcastManager.h"
+#include "CommandRegistry.h"
+#include "../Connection.h"
 #include "../Logger.h"
-#include "Server.h"
+#include "commands/Command.h"
 
-MessageProcessor::MessageProcessor(Server &server) : m_Server(server)
-{}
+MessageProcessor::MessageProcessor(ConnectionManager &connectionManager,
+                                   BroadcastManager &broadcastManager,
+                                   CommandRegistry &commandRegistry,
+                                   std::barrier<> &serviceBarrier) :
+                                    m_ConnectionManager(connectionManager),
+                                    m_BroadcastManager(broadcastManager),
+                                    m_CommandRegistry(commandRegistry)
+{
+    // Wait for all services to be initialized
+    serviceBarrier.arrive_and_wait();
+}
 
 // This will need to do other stuff in the future
 void MessageProcessor::handleMessage(Connection &sender, const std::string &message)
 {
     LOG(LogLevel::INFO,  + "Client @ " + sender.getIP() + ':' + std::to_string(sender.getPort()) + " sent: \"" + message + '\"');
 
-    // Add message to user's history
-    m_Server.m_UserManager.getUser(sender.getFD())->addMessageToHistory(message);
+    // ... do stuff ...
 
     // Handle message
     parseMessage(sender, message);
 }
 
-// This will eventually pass messages into a dedicated message processor/parser
-void MessageProcessor::parseMessage(Connection &sender, const std::string &message)
+// This needs to parse messages properly
+void MessageProcessor::parseMessage(Connection &sender, const std::string &message) const
 {
-    if (message == "/quit")
+    auto it = m_CommandRegistry.find(message);
+
+    if (it != m_CommandRegistry.end())
     {
-        // Handle client quit logic here...
-        //LOG(LogLevel::INFO, "Client " + std::to_string(sender.getSocket()) + " has quit->");
-        m_Server.m_ConnectionManager.removeConnection(sender.getFD());
+        auto command = it->second.operator()();
+        command->execute(message);
+        delete command;
     }
-    else if (message == "/stop")
-        m_Server.stop();
-    else if (message == "/" || message == "/help")
-        return; // Don't do anything for now. Will send a command list later
     else
-    {
-        //Logger::instance().logMessage(LogLevel::INFO, "Received message: \"" + message + "\" from client " + std::to_string(sender.getSocket()));
-        m_Server.m_BroadcastManager.broadcastMessage(sender, message);
-    }
+        m_BroadcastManager.broadcastMessage(sender, message);
+
 }
