@@ -3,7 +3,7 @@
 //
 
 #pragma once
-#include "Subsystem.h"
+#include "../Subsystem.h"
 #include <unordered_map>
 #include <string>
 #include <vector>
@@ -41,7 +41,7 @@ private:
 
 public:
     int init() override;
-    [[nodsciard]] std::string name() override { return "connectionManager"; }
+    [[nodiscard]] constexpr std::string name() const override { return "ConnectionManager"; }
 
     [[nodiscard]] size_t size() const { return m_Connections.size(); }
     [[nodiscard]] bool empty() const { return m_Connections.empty(); }

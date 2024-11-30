@@ -10,6 +10,11 @@ UserManager::UserManager(ConnectionManager &connectionManager) :
                         m_ConnectionManager(connectionManager)
 {}
 
+int UserManager::init()
+{
+    return 0;
+}
+
 UserManager::~UserManager()
 {
     for (auto &pair : m_Users) delete pair.second;

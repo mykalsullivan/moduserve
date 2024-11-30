@@ -8,7 +8,7 @@
 
 class Message {
 public:
-    Message(int senderID, std::string body);
+    explicit Message(int senderID = -1, std::string body = "");
 
 private:
     int m_SenderID;

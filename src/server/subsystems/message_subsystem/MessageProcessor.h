@@ -3,7 +3,7 @@
 //
 
 #pragma once
-#include "Subsystem.h"
+#include "../Subsystem.h"
 #include <string>
 
 // Forward declaration(s)
@@ -27,7 +27,7 @@ private:
 
 public:
     int init() override;
-    [[nodiscard]] std::string name() override { return "messageProcessor"; }
+    [[nodiscard]] constexpr std::string name() const override { return "MessageProcessor"; }
 
     void handleMessage(Connection &sender, const std::string &message);
 

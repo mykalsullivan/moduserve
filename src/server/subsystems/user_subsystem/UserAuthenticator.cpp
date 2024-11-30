@@ -3,9 +3,12 @@
 //
 
 #include "UserAuthenticator.h"
-#include "../../common/Logger.h"
+#include "common/Logger.h"
 #include <iomanip>
 #include <openssl/sha.h>
+
+UserAuthenticator::UserAuthenticator() : m_DatabaseConnection(nullptr)
+{}
 
 UserAuthenticator::~UserAuthenticator()
 {

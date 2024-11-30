@@ -1,0 +1,2 @@
+add_subdirectory(help_command)
+add_subdirectory(stop_command)

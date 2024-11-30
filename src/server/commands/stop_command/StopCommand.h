@@ -3,7 +3,7 @@
 //
 
 #pragma once
-#include "Command.h"
+#include "server/commands/Command.h"
 
 class StopCommand : public Command {
 public:

@@ -7,7 +7,7 @@
 #include <iomanip>
 #include <utility>
 
-Message::Message(int senderID = -1, std::string content = "")
+Message::Message(int senderID, std::string content)
         : m_SenderID(senderID), m_Content(std::move(content)), m_Timestamp(std::chrono::system_clock::now())
 {}
 

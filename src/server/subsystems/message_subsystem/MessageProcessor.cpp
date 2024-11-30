@@ -3,12 +3,12 @@
 //
 
 #include "MessageProcessor.h"
-#include "ConnectionManager.h"
-#include "BroadcastManager.h"
-#include "CommandRegistry.h"
-#include "../../common/Connection.h"
-#include "../../common/Logger.h"
-#include "../commands/Command.h"
+#include "server/subsystems/connection_manager_subsystem/ConnectionManager.h"
+#include "server/subsystems/broadcast_subsystem/BroadcastManager.h"
+#include "server/subsystems/command_registry_subsystem/CommandRegistry.h"
+#include "common/Connection.h"
+#include "common/Logger.h"
+#include "server/commands/Command.h"
 
 MessageProcessor::MessageProcessor(ConnectionManager &connectionManager,
                                    BroadcastManager &broadcastManager,
@@ -17,6 +17,11 @@ MessageProcessor::MessageProcessor(ConnectionManager &connectionManager,
                                     m_BroadcastManager(broadcastManager),
                                     m_CommandRegistry(commandRegistry)
 {}
+
+int MessageProcessor::init()
+{
+    return 0;
+}
 
 // This will need to do other stuff in the future
 void MessageProcessor::handleMessage(Connection &sender, const std::string &message)

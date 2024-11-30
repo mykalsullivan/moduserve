@@ -9,5 +9,5 @@ class Command {
 public:
     virtual ~Command() = default;
     virtual void execute(const std::string &args) = 0;
-    [[nodiscard]] virtual std::string name() const = 0;
+    [[nodiscard]] constexpr virtual std::string name() const = 0;
 };

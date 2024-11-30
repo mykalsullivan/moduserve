@@ -3,12 +3,9 @@
 //
 
 #pragma once
-#include "Subsystem.h"
+#include "../Subsystem.h"
 #include <string>
 #include <pqxx/pqxx>
-
-// Forward declaration(s)
-class Server;
 
 class UserAuthenticator : public Subsystem {
 public:
@@ -20,7 +17,7 @@ private:
 
 public:
     int init() override;
-    [[nodiscard]] std::string name() override { return "userAuthenticator"; }
+    [[nodiscard]] constexpr std::string name() const override { return "UserAuthenticator"; }
 
     bool sync();
     [[nodiscard]] int registerUser(const std::string &username, const std::string &password);

@@ -3,7 +3,7 @@
 //
 
 #pragma once
-#include "Subsystem.h"
+#include "../Subsystem.h"
 #include <string>
 #include <unordered_map>
 #include <mutex>
@@ -23,7 +23,7 @@ private:
 
 public:
     int init() override;
-    [[nodiscard]] std::string name() override { return "userManager"; }
+    [[nodiscard]] constexpr std::string name() const override { return "UserManager"; }
 
     bool add(int socketID, User *user);
     bool remove(int connectionID);

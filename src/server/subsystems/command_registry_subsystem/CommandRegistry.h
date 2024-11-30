@@ -3,7 +3,7 @@
 //
 
 #pragma once
-#include "Subsystem.h"
+#include "../Subsystem.h"
 #include <string>
 #include <unordered_map>
 #include <functional>
@@ -22,7 +22,7 @@ private:
 
 public:
     int init() override;
-    [[nodiscard]] std::string name() override { return "commandRegistry"; }
+    [[nodiscard]] constexpr std::string name() const override { return "CommandRegistry"; }
 
     auto begin() const { return m_CommandFactories.begin(); }
     auto end() const { return m_CommandFactories.end(); }

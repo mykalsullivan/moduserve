@@ -3,7 +3,7 @@
 //
 
 #pragma once
-#include "../common/Connection.h"
+#include "common/Connection.h"
 
 class ServerConnection : public Connection {
 public:

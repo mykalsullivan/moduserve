@@ -16,9 +16,7 @@ User::User(std::string &username,
     m_Status(std::move(status)),
     m_Bio(std::move(bio))
 
-{
-
-}
+{}
 
 void User::setUsername(const std::string &username)
 {

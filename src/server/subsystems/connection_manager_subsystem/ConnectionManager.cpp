@@ -3,11 +3,11 @@
 //
 
 #include "ConnectionManager.h"
-#include "BroadcastManager.h"
-#include "MessageProcessor.h"
-#include "../ServerConnection.h"
-#include "../Server.h"
-#include "../../common/Logger.h"
+#include "server/subsystems/broadcast_subsystem/BroadcastManager.h"
+#include "server/subsystems/message_subsystem/MessageProcessor.h"
+#include "server/ServerConnection.h"
+#include "server/Server.h"
+#include "common/Logger.h"
 #include <barrier>
 
 ConnectionManager::ConnectionManager(BroadcastManager &broadcastManager,

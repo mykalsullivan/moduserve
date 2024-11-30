@@ -3,8 +3,8 @@
 //
 
 #include "CommandRegistry.h"
-#include "../commands/Command.h"
-#include "../../common/Logger.h"
+#include "server/commands/Command.h"
+#include "common/Logger.h"
 #include <dlfcn.h>
 #include <stdexcept>
 
