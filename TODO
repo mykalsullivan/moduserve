@@ -1,2 +1,6 @@
 - Dynamic command loading
 - Chat messages need to be stored on a SQL database
+- Config file loading (JSON)
+- Connection handshake (ensuring correct protocol version, application version, name of program, etc)
+- Introduce a signals/slots mechanism that will allow each subsystem to communicate with each other
+    - Create a way to keep track of what subsystems are connected to what slots

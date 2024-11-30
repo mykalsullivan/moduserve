@@ -3,22 +3,25 @@
 //
 
 #pragma once
+#include "Subsystem.h"
 #include <string>
 #include <pqxx/pqxx>
-#include <barrier>
 
 // Forward declaration(s)
 class Server;
 
-class UserAuthenticator {
+class UserAuthenticator : public Subsystem {
 public:
-    explicit UserAuthenticator(std::barrier<> &serviceBarrier);
-    ~UserAuthenticator();
+    UserAuthenticator();
+    ~UserAuthenticator() override;
 
 private:
     pqxx::connection *m_DatabaseConnection;
 
 public:
+    int init() override;
+    [[nodiscard]] std::string name() override { return "userAuthenticator"; }
+
     bool sync();
     [[nodiscard]] int registerUser(const std::string &username, const std::string &password);
     [[nodiscard]] bool authenticate(const std::string &username, const std::string &password);

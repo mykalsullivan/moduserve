@@ -3,24 +3,27 @@
 //
 
 #pragma once
+#include "Subsystem.h"
 #include <string>
 #include <unordered_map>
 #include <functional>
-#include <barrier>
 
 // Forward declaration(s)
 class Command;
 
-class CommandRegistry {
+class CommandRegistry : public Subsystem {
     using CommandFactory = std::function<Command *()>;
 public:
-    explicit CommandRegistry(std::barrier<> &serviceBarrier);
-    ~CommandRegistry() = default;
+    CommandRegistry() = default;
+    ~CommandRegistry() override = default;
 
 private:
     std::unordered_map<std::string, CommandFactory> m_CommandFactories;
 
 public:
+    int init() override;
+    [[nodiscard]] std::string name() override { return "commandRegistry"; }
+
     auto begin() const { return m_CommandFactories.begin(); }
     auto end() const { return m_CommandFactories.end(); }
     auto find(const std::string &commandName) const { return m_CommandFactories.find(commandName); }

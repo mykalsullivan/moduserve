@@ -6,21 +6,17 @@
 #include "ConnectionManager.h"
 #include "BroadcastManager.h"
 #include "CommandRegistry.h"
-#include "../Connection.h"
-#include "../Logger.h"
-#include "commands/Command.h"
+#include "../../Connection.h"
+#include "../../Logger.h"
+#include "../commands/Command.h"
 
 MessageProcessor::MessageProcessor(ConnectionManager &connectionManager,
                                    BroadcastManager &broadcastManager,
-                                   CommandRegistry &commandRegistry,
-                                   std::barrier<> &serviceBarrier) :
+                                   CommandRegistry &commandRegistry) :
                                     m_ConnectionManager(connectionManager),
                                     m_BroadcastManager(broadcastManager),
                                     m_CommandRegistry(commandRegistry)
-{
-    // Wait for all services to be initialized
-    serviceBarrier.arrive_and_wait();
-}
+{}
 
 // This will need to do other stuff in the future
 void MessageProcessor::handleMessage(Connection &sender, const std::string &message)
@@ -37,7 +33,6 @@ void MessageProcessor::handleMessage(Connection &sender, const std::string &mess
 void MessageProcessor::parseMessage(Connection &sender, const std::string &message) const
 {
     auto it = m_CommandRegistry.find(message);
-
     if (it != m_CommandRegistry.end())
     {
         auto command = it->second.operator()();
@@ -46,5 +41,4 @@ void MessageProcessor::parseMessage(Connection &sender, const std::string &messa
     }
     else
         m_BroadcastManager.broadcastMessage(sender, message);
-
 }

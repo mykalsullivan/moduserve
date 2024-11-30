@@ -5,33 +5,21 @@
 #include "ConnectionManager.h"
 #include "BroadcastManager.h"
 #include "MessageProcessor.h"
-#include "ServerConnection.h"
-#include "Server.h"
-#include "../Logger.h"
+#include "../ServerConnection.h"
+#include "../Server.h"
+#include "../../Logger.h"
+#include <barrier>
 
 ConnectionManager::ConnectionManager(BroadcastManager &broadcastManager,
                                     MessageProcessor &messageProcessor,
-                                    ServerConnection &serverConnection,
-                                    std::barrier<> &serviceBarrier) :
+                                    ServerConnection &serverConnection) :
                                     m_BroadcastManager(broadcastManager),
-                                    m_MessageProcessor(messageProcessor)
+                                    m_MessageProcessor(messageProcessor),
+                                    m_ThreadBarrier(2)
 {
-    // Wait for all services to be initialized
-    LOG(LogLevel::DEBUG, "Arrived at ConnectionManager service barrier")
-    serviceBarrier.arrive_and_wait();
-    LOG(LogLevel::DEBUG, "Moved past ConnectionManager service barrier")
-
     // Set server connection
-    addConnection(serverConnection);
+    add(serverConnection);
     m_ServerFD = serverConnection.getFD();
-
-    // Start acceptor thread
-    m_AcceptorThread = std::thread(&ConnectionManager::acceptorThreadWork, this);
-
-    // Start event loop thread
-    m_EventThread = std::thread(&ConnectionManager::eventThreadWork, this);
-
-    LOG(LogLevel::INFO, "Started connection manager");
 }
 
 ConnectionManager::~ConnectionManager()
@@ -66,7 +54,19 @@ ConnectionManager::~ConnectionManager()
     LOG(LogLevel::INFO, "Stopped connection manager");
 }
 
-bool ConnectionManager::addConnection(Connection &connection)
+int ConnectionManager::init()
+{
+    // Start acceptor thread
+    m_AcceptorThread = std::thread(&ConnectionManager::acceptorThreadWork, this);
+
+    // Start event loop thread
+    m_EventThread = std::thread(&ConnectionManager::eventThreadWork, this);
+
+    LOG(LogLevel::INFO, "Started connection manager");
+    return 0;
+}
+
+bool ConnectionManager::add(Connection &connection)
 {
     std::lock_guard lock(m_Mutex);
 
@@ -83,7 +83,7 @@ bool ConnectionManager::addConnection(Connection &connection)
     return false; // Connection already exists
 }
 
-bool ConnectionManager::removeConnection(int socketFD)
+bool ConnectionManager::remove(int socketFD)
 {
     std::lock_guard lock(m_Mutex);
 
@@ -101,7 +101,7 @@ bool ConnectionManager::removeConnection(int socketFD)
     return false; // Connection not found
 }
 
-Connection *ConnectionManager::getConnection(int fd)
+Connection *ConnectionManager::get(int fd)
 {
     std::lock_guard lock(m_Mutex);
     auto it = m_Connections.find(fd);
@@ -110,11 +110,14 @@ Connection *ConnectionManager::getConnection(int fd)
 
 Connection *ConnectionManager::operator[](int fd)
 {
-    return getConnection(fd);
+    return get(fd);
 }
 
 void ConnectionManager::eventThreadWork()
 {
+    // Wait for all threads to be created
+    m_ThreadBarrier.arrive_and_wait();
+
     LOG(LogLevel::DEBUG, "Started event thread")
     while (Server::instance().isRunning())
     {
@@ -134,12 +137,15 @@ void ConnectionManager::eventThreadWork()
 
 void ConnectionManager::acceptorThreadWork()
 {
+    // Wait for all threads to be created
+    m_ThreadBarrier.arrive_and_wait();
+
     LOG(LogLevel::DEBUG, "Started acceptor thread")
     while (Server::instance().isRunning())
     {
         if (auto client = reinterpret_cast<ServerConnection *>(m_Connections[m_ServerFD])->acceptClient())
         {
-            if (addConnection(*client))
+            if (add(*client))
             {
                 LOG(LogLevel::INFO, "Client @ " + client->getIP() + ':' + std::to_string(client->getPort()) + " connected");
                 m_BroadcastManager.broadcastMessage(*m_Connections[m_ServerFD],
@@ -214,5 +220,5 @@ std::vector<int> ConnectionManager::processConnections()
 
 void ConnectionManager::purgeConnections(const std::vector<int> &connectionsToPurge)
 {
-    for (int fd : connectionsToPurge) removeConnection(fd);
+    for (int fd : connectionsToPurge) remove(fd);
 }

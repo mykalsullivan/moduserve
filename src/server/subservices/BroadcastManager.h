@@ -3,25 +3,27 @@
 //
 
 #pragma once
+#include "Subsystem.h"
 #include <string>
-#include <barrier>
 
 // Forward declaration(s)
 class ConnectionManager;
 class MessageProcessor;
 class Connection;
 
-class BroadcastManager {
+class BroadcastManager : public Subsystem {
 public:
     BroadcastManager(ConnectionManager &connectionManager,
-                    MessageProcessor &messageProcessor,
-                    std::barrier<> &serviceBarrier);
-    ~BroadcastManager() = default;
+                    MessageProcessor &messageProcessor);
+    ~BroadcastManager() override = default;
 
 private:
     ConnectionManager &m_ConnectionManager;
     MessageProcessor &m_MessageProcessor;
 
 public:
+    int init() override;
+    [[nodiscard]] std::string name() override { return "broadcastManager"; }
+
     void broadcastMessage(Connection &sender, const std::string &message);
 };

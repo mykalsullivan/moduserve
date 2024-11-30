@@ -6,15 +6,10 @@
 #include <memory>
 #include <atomic>
 #include <condition_variable>
-#include <barrier>
+#include <unordered_map>
 
 // Forward declaration(s)
-class ConnectionManager;
-class MessageProcessor;
-class BroadcastManager;
-class CommandRegistry;
-class UserManager;
-class UserAuthenticator;
+class Subsystem;
 
 class Server {
     Server();
@@ -32,21 +27,22 @@ public:
 
 private:
     std::atomic<bool> m_Running;
+    std::string m_WorkingDirectory;
+    std::unordered_map<std::string, std::unique_ptr<Subsystem>> m_Subservices;
+
     mutable std::mutex m_Mutex;
     std::condition_variable m_CV;
-    std::barrier<> m_ServiceBarrier;
-
-    std::unique_ptr<ConnectionManager> m_ConnectionManager {};
-    std::unique_ptr<MessageProcessor> m_MessageProcessor {};
-    std::unique_ptr<BroadcastManager> m_BroadcastManager {};
-    std::unique_ptr<CommandRegistry> m_CommandRegistry {};
-    std::unique_ptr<UserManager> m_UserManager {};
-    std::unique_ptr<UserAuthenticator> m_UserAuthenticator {};
 
 public:
+    // Runtime stuff
     int run(int argc, char **argv);
     void stop();
     [[nodiscard]] bool isRunning() { return m_Running; }
+    [[nodiscard]] std::string workingDirectory() const { return m_WorkingDirectory; }
+
+    // Subservice stuff
+    void registerSubsystem(std::unique_ptr<Subsystem> subservice);
+    Subsystem *subsystem(const std::string &name) const;
 
 private:
     int init(int argc, char **argv);

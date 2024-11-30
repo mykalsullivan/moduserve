@@ -3,33 +3,31 @@
 //
 
 #pragma once
+#include "Subsystem.h"
 #include <string>
 #include <unordered_map>
 #include <mutex>
-#include <barrier>
 
 // Forward declaration(s)
 class ConnectionManager;
-class UserAuthenticator;
 class User;
 
-class UserManager {
+class UserManager : public Subsystem {
 public:
-    UserManager(ConnectionManager &connectionManager,
-                UserAuthenticator &userAuthenticator,
-                std::barrier<> &serviceBarrier);
-    ~UserManager();
+    explicit UserManager(ConnectionManager &connectionManager);
+    ~UserManager() override;
 
 private:
     ConnectionManager &m_ConnectionManager;
-    UserAuthenticator &m_UserAuthenticator;
     std::unordered_map<int, User *> m_Users;
-    mutable std::mutex m_UserMutex;
 
 public:
-    bool addUser(int socketID, User *user);
-    bool removeUser(int connectionID);
-    User *getUser(int connectionID);
+    int init() override;
+    [[nodiscard]] std::string name() override { return "userManager"; }
+
+    bool add(int socketID, User *user);
+    bool remove(int connectionID);
+    User *get(int connectionID);
     User *operator[](int connectionID);
 
     [[nodiscard]] size_t size() const { return m_Users.size(); }

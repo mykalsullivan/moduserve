@@ -4,17 +4,18 @@
 
 #include "BroadcastManager.h"
 #include "ConnectionManager.h"
-#include "../Connection.h"
-#include "../Logger.h"
+#include "../../Connection.h"
+#include "../../Logger.h"
 
 BroadcastManager::BroadcastManager(ConnectionManager &connectionManager,
-                                    MessageProcessor &messageProcessor,
-                                    std::barrier<> &serviceBarrier) :
+                                    MessageProcessor &messageProcessor) :
                                     m_ConnectionManager(connectionManager),
                                     m_MessageProcessor(messageProcessor)
+{}
+
+int BroadcastManager::init()
 {
-    // Wait for all services to be initialized
-    serviceBarrier.arrive_and_wait();
+    return 0;
 }
 
 void BroadcastManager::broadcastMessage(Connection &sender, const std::string &message)

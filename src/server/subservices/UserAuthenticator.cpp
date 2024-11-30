@@ -3,39 +3,39 @@
 //
 
 #include "UserAuthenticator.h"
-#include "../Logger.h"
+#include "../../Logger.h"
 #include <iomanip>
 #include <openssl/sha.h>
 
-UserAuthenticator::UserAuthenticator(std::barrier<> &serviceBarrier)
+UserAuthenticator::~UserAuthenticator()
 {
-    // Wait for all services to be initialized
-    serviceBarrier.arrive_and_wait();
+    delete m_DatabaseConnection;
+}
 
+int UserAuthenticator::init()
+{
     std::string connectionString = "dbname=practice_server_user_db user=msullivan password=Mpwfsqli$ hostaddr=127.0.0.1 port=5432";
     try
     {
         m_DatabaseConnection = new pqxx::connection(connectionString);
         if (m_DatabaseConnection->is_open())
         {
-            LOG(LogLevel::INFO, "Successfully connected to user database");
+            LOG(LogLevel::DEBUG, "Successfully connected to user database");
         }
         else
         {
             LOG(LogLevel::ERROR, "Failed to connect to user database");
             m_DatabaseConnection = nullptr;
+            return 0;
         }
     }
     catch (const std::exception &e)
     {
         LOG(LogLevel::ERROR, "Error connecting to database: " + std::string(e.what()));
         m_DatabaseConnection = nullptr;
+        return 1;
     }
-}
-
-UserAuthenticator::~UserAuthenticator()
-{
-    delete m_DatabaseConnection;
+    return 0;
 }
 
 bool UserAuthenticator::authenticate(const std::string &username, const std::string &password)

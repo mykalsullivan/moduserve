@@ -18,18 +18,18 @@ add_executable(ChatApplicationServer
         src/server/Message.cpp
         src/server/main.cpp
         src/server/ServerConnection.cpp
-        src/server/MessageProcessor.cpp
-        src/server/ConnectionManager.cpp
-        src/server/UserManager.cpp
-        src/server/UserAuthenticator.cpp
+        src/server/subservices/ConnectionManager.cpp
+        src/server/subservices/UserManager.cpp
+        src/server/subservices/UserAuthenticator.cpp
         src/User.cpp
         src/Connection.cpp
         src/Logger.cpp
-        src/server/BroadcastManager.h
-        src/server/BroadcastManager.cpp
-        src/server/MessageProcessor.h
-        src/server/CommandRegistry.h
-        src/server/CommandRegistry.cpp
+        src/server/subservices/BroadcastManager.h
+        src/server/subservices/BroadcastManager.cpp
+        src/server/subservices/MessageProcessor.cpp
+        src/server/subservices/CommandRegistry.h
+        src/server/subservices/CommandRegistry.cpp
+        src/server/subservices/Subsystem.h
         #src/server/commands/HelpCommand.cpp
         #src/server/commands/StopCommand.cpp
 )

@@ -4,30 +4,19 @@
 
 #include "UserManager.h"
 #include "UserAuthenticator.h"
-#include "../User.h"
+#include "../../User.h"
 
-UserManager::UserManager(ConnectionManager &connectionManager,
-                        UserAuthenticator &userAuthenticator,
-                        std::barrier<> &serviceBarrier) :
-                        m_ConnectionManager(connectionManager),
-                        m_UserAuthenticator(userAuthenticator)
-{
-    // Wait for all services to be initialized
-    serviceBarrier.arrive_and_wait();
-}
+UserManager::UserManager(ConnectionManager &connectionManager) :
+                        m_ConnectionManager(connectionManager)
+{}
 
 UserManager::~UserManager()
 {
-    std::lock_guard lock(m_UserMutex);
-
-    // Clean up
     for (auto &pair : m_Users) delete pair.second;
 }
 
-bool UserManager::addUser(int socketID, User *user)
+bool UserManager::add(int socketID, User *user)
 {
-    std::lock_guard lock(m_UserMutex);
-
     if (m_Users.find(socketID) == m_Users.end())
     {
         m_Users[socketID] = user;
@@ -36,10 +25,8 @@ bool UserManager::addUser(int socketID, User *user)
     return false; // User already exists
 }
 
-bool UserManager::removeUser(int socketID)
+bool UserManager::remove(int socketID)
 {
-    std::lock_guard lock(m_UserMutex);
-
     auto it = m_Users.find(socketID);
     if (it == m_Users.end())
         return false; // User not found
@@ -48,21 +35,19 @@ bool UserManager::removeUser(int socketID)
     return true;
 }
 
-User *UserManager::getUser(int socketFD)
+User *UserManager::get(int socketFD)
 {
-    std::lock_guard lock(m_UserMutex);
     auto it = m_Users.find(socketFD);
     return (it != m_Users.end()) ? it->second : nullptr;
 }
 
 User *UserManager::operator[](int socketID)
 {
-    return getUser(socketID);
+    return get(socketID);
 }
 
 // Make this work with an individual connection
 bool UserManager::authenticateConnection(int connectionFD, const std::string &username, const std::string &password)
 {
-    std::lock_guard lock(m_UserMutex);
     return m_UserAuthenticator.authenticate(username, password);
 }

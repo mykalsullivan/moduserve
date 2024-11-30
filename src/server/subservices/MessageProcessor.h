@@ -3,8 +3,8 @@
 //
 
 #pragma once
+#include "Subsystem.h"
 #include <string>
-#include <barrier>
 
 // Forward declaration(s)
 class ConnectionManager;
@@ -13,13 +13,12 @@ class CommandRegistry;
 class Connection;
 class Message;
 
-class MessageProcessor {
+class MessageProcessor : public Subsystem {
 public:
-    explicit MessageProcessor(ConnectionManager &connectionManager,
-                                BroadcastManager &broadcastManager,
-                                CommandRegistry &commandRegistry,
-                                std::barrier<> &serviceBarrier);
-    ~MessageProcessor() = default;
+    MessageProcessor(ConnectionManager &connectionManager,
+                    BroadcastManager &broadcastManager,
+                    CommandRegistry &commandRegistry);
+    ~MessageProcessor() override = default;
 
 private:
     ConnectionManager &m_ConnectionManager;
@@ -27,6 +26,9 @@ private:
     BroadcastManager &m_BroadcastManager;
 
 public:
+    int init() override;
+    [[nodiscard]] std::string name() override { return "messageProcessor"; }
+
     void handleMessage(Connection &sender, const std::string &message);
 
 private:

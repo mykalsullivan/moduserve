@@ -3,19 +3,16 @@
 //
 
 #include "CommandRegistry.h"
-#include "commands/Command.h"
-#include "../Logger.h"
+#include "../commands/Command.h"
+#include "../../Logger.h"
 #include <dlfcn.h>
 #include <stdexcept>
 
 // #include "commands/StopCommand.h"
 // #include "commands/HelpCommand.h"
 
-CommandRegistry::CommandRegistry(std::barrier<> &serviceBarrier)
+int CommandRegistry::init()
 {
-    // Wait for all services to be initialized
-    serviceBarrier.arrive_and_wait();
-
     std::string commandLibPath = "/home/msullivan/Development/GitHub/ChatApplication/";
 
     // Load built-in commands
@@ -23,6 +20,7 @@ CommandRegistry::CommandRegistry(std::barrier<> &serviceBarrier)
     //m_Commands.emplace("help", std::make_shared<HelpCommand>());
 
     // Load custom commands
+    return 0;
 }
 
 void CommandRegistry::loadCommand(const std::string &libPath)
