@@ -4,7 +4,7 @@
 
 #include "UserManager.h"
 #include "UserAuthenticator.h"
-#include "../../User.h"
+#include "server/User.h"
 
 UserManager::UserManager(ConnectionManager &connectionManager) :
                         m_ConnectionManager(connectionManager)

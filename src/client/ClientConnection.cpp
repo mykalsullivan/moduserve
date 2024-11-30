@@ -3,7 +3,7 @@
 //
 
 #include "ClientConnection.h"
-#include "../Logger.h"
+#include "../common/Logger.h"
 #include <iostream>
 #include <cstring>
 #include <arpa/inet.h>

@@ -7,7 +7,7 @@
 #include "MessageProcessor.h"
 #include "../ServerConnection.h"
 #include "../Server.h"
-#include "../../Logger.h"
+#include "../../common/Logger.h"
 #include <barrier>
 
 ConnectionManager::ConnectionManager(BroadcastManager &broadcastManager,

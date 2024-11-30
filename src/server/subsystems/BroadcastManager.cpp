@@ -4,8 +4,8 @@
 
 #include "BroadcastManager.h"
 #include "ConnectionManager.h"
-#include "../../Connection.h"
-#include "../../Logger.h"
+#include "../../common/Connection.h"
+#include "../../common/Logger.h"
 
 BroadcastManager::BroadcastManager(ConnectionManager &connectionManager,
                                     MessageProcessor &messageProcessor) :

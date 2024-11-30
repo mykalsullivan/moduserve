@@ -4,7 +4,7 @@
 
 #include "CommandRegistry.h"
 #include "../commands/Command.h"
-#include "../../Logger.h"
+#include "../../common/Logger.h"
 #include <dlfcn.h>
 #include <stdexcept>
 

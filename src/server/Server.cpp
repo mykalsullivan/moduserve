@@ -4,7 +4,7 @@
 
 #include "Server.h"
 #include "ServerConnection.h"
-#include "../Logger.h"
+#include "../common/Logger.h"
 #include <iostream>
 #include <filesystem>
 
@@ -123,18 +123,18 @@ int Server::init(int argc, char **argv)
     LOG(LogLevel::INFO, "Listening for new connections on " + serverConnection->getIP() + ':' +
                         std::to_string(serverConnection->getPort()) + ')');
 
-    // 8. Register built-in subservices
+    // 8. Register built-in subsystems
     registerSubsystem(std::make_unique<ConnectionManager>(*m_BroadcastManager, *m_MessageProcessor, *serverConnection));
     registerSubsystem(std::make_unique<MessageProcessor>(*m_ConnectionManager, *m_BroadcastManager, *m_CommandRegistry));
     registerSubsystem(std::make_unique<BroadcastManager>(*m_ConnectionManager, *m_MessageProcessor));
     registerSubsystem(std::make_unique<CommandRegistry>());
     registerSubsystem(std::make_unique<UserManager>(*m_ConnectionManager, *m_UserAuthenticator));
 
-    // 9. Initialize subservices
+    // 9. Initialize subsystems
     for (auto &ss : m_Subservices)
         ss.second->init();
 
-    LOG(LogLevel::INFO, "All subservices initialized");
+    LOG(LogLevel::INFO, "All subsystems initialized");
     return 0;
 }
 

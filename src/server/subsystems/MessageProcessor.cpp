@@ -6,8 +6,8 @@
 #include "ConnectionManager.h"
 #include "BroadcastManager.h"
 #include "CommandRegistry.h"
-#include "../../Connection.h"
-#include "../../Logger.h"
+#include "../../common/Connection.h"
+#include "../../common/Logger.h"
 #include "../commands/Command.h"
 
 MessageProcessor::MessageProcessor(ConnectionManager &connectionManager,
