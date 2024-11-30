@@ -6,3 +6,4 @@
     - Create a way to keep track of what subsystems are connected to what slots
 - Rename the project to something else. This project is starting to get cool, so it needs a cool name
 - Add Windows support
+- Allow the server to start as a daemon (but don't let the user start it as a daemon after it has already been started)
