@@ -143,8 +143,8 @@ void ClientConnection::startMessagePollingThread() {
         while (m_MessagePolling) {
             //logMessage(LogLevel::DEBUG, "Polling...");
             pfd.fd = m_FD;       // Set the file descriptor
-            pfd.events = POLLIN;       // Make it poll events
-            pfd.revents = 0;           // Initialize the events to 0
+            pfd.events = POLLIN;       // Make it poll signalManager
+            pfd.revents = 0;           // Initialize the signalManager to 0
 
             int result = poll(&pfd, 1, 1000);  // Poll for 1 second
 

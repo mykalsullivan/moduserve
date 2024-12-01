@@ -4,7 +4,7 @@
 
 #include "UserSubsystem.h"
 #include "UserAuthenticationSubsystem.h"
-#include "server/User.h"
+#include "User.h"
 
 int UserSubsystem::init()
 {

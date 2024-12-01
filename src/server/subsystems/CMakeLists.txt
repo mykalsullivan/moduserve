@@ -1,4 +1,4 @@
 add_subdirectory(connection_subsystem)
 add_subdirectory(message_subsystem)
-add_subdirectory(command_subsystem)
+add_subdirectory(database_subsystem)
 add_subdirectory(user_subsystem)

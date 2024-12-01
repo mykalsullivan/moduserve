@@ -7,7 +7,7 @@
 #include <mutex>
 #include <any>
 
-class EventManager {
+class SignalManager {
     std::mutex m_Mutex;
     std::unordered_map<std::string, std::any> m_Signals;
 public:

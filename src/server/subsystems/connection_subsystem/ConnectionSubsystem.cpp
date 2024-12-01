@@ -5,7 +5,7 @@
 #include "ConnectionSubsystem.h"
 #include "ConnectionManager.h"
 #include "server/Server.h"
-#include "server/ServerConnection.h"
+#include "ServerConnection.h"
 #include "common/Logger.h"
 #include <barrier>
 
@@ -33,10 +33,10 @@ int ConnectionSubsystem::init()
     onConnect.connect(&ConnectionSubsystem::onConnectFunction);
     onDisconnect.connect(&ConnectionSubsystem::onDisconnectFunction);
 
-    // Register signals with the EventManager
-    events.registerSignal("onBroadcast", onBroadcast);
-    events.registerSignal("onConnect", onConnect);
-    events.registerSignal("onDisconnect", onDisconnect);
+    // Register signals with the SignalManager
+    server.signalManager().registerSignal("onBroadcast", onBroadcast);
+    server.signalManager().registerSignal("onConnect", onConnect);
+    server.signalManager().registerSignal("onDisconnect", onDisconnect);
 
     // Define and start acceptor thread
     m_AcceptorThread = std::thread([this] {
@@ -142,7 +142,7 @@ void ConnectionSubsystem::processConnections()
         {
             // Process message if it's valid
             //logMessage(LogLevel::DEBUG, "Processing message...");
-            auto signal = events.getSignal<Signal<const Connection &, const std::string &>>("onReceive");
+            auto signal = server.signalManager().getSignal<Signal<const Connection &, const std::string &>>("onReceive");
             if (signal)signal->emit(*connection, message);
             return false; // Don't purge this connection
         }

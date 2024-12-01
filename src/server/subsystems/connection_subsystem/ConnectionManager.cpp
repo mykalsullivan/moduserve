@@ -5,7 +5,7 @@
 #include "ConnectionManager.h"
 #include "common/Logger.h"
 #include "common/Connection.h"
-#include "server/ServerConnection.h"
+#include "ServerConnection.h"
 #include "server/Server.h"
 #include "server/Signal.h"
 
@@ -88,7 +88,7 @@ bool ConnectionManager::add(Connection &connection)
     if (!m_Connections.contains(socketID))
     {
         m_Connections[socketID] = &connection;
-        auto signal = server.events.getSignal<Signal<const Connection &>>("onConnect");
+        auto signal = server.signalManager().getSignal<Signal<const Connection &>>("onConnect");
         if (signal) signal->emit(connection);
         return true;
     }
@@ -103,7 +103,7 @@ bool ConnectionManager::remove(int socketFD)
     auto it = m_Connections.find(socketFD);
     if (it != m_Connections.end())
     {
-        auto signal = server.events.getSignal<Signal<const Connection &>>("onDisconnect");
+        auto signal = server.signalManager().getSignal<Signal<const Connection &>>("onDisconnect");
         if (signal) signal->emit(*it->second);
 
         delete it->second;

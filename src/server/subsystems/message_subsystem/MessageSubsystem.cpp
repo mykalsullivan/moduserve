@@ -11,8 +11,8 @@
 
 int MessageSubsystem::init()
 {
-    // Register signals with the EventManager
-    events.registerSignal("onReceive", onReceive);
+    // Register signals with the SignalManager
+    server.signalManager().registerSignal("onReceive", onReceive);
 
     // Connect the signal to slot
     onReceive.connect(&MessageSubsystem::handleMessage);
@@ -33,7 +33,7 @@ void MessageSubsystem::parseMessage(const Connection &sender, const std::string 
 {
     if (message[0] == '/')
     {
-//        auto commandSubsystem = dynamic_cast<CommandSubsystem *>(Server::instance().subsystem("CommandSubsystem"));
+//        auto commandSubsystem = dynamic_cast<CommandManager *>(Server::instance().subsystem("CommandManager"));
 //        auto it = commandSubsystem->find(message);
 //        if (it != commandSubsystem->end())
 //        {
@@ -49,7 +49,7 @@ void MessageSubsystem::parseMessage(const Connection &sender, const std::string 
     else
     {
         logMessage(LogLevel::INFO,  + "Client @ " + sender.getIP() + ':' + std::to_string(sender.getPort()) + " sent: \"" + message + '\"');
-        auto signal = events.getSignal<Signal<const Connection &, const std::string &>>("onBroadcast");
+        auto signal = server.signalManager().getSignal<Signal<const Connection &, const std::string &>>("onBroadcast");
         if (signal) signal->emit(sender, message);
     }
 }

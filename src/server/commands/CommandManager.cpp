@@ -2,18 +2,18 @@
 // Created by msullivan on 11/29/24.
 //
 
-#include "CommandSubsystem.h"
+#include "CommandManager.h"
 #include "CommandRegistry.h"
 #include "common/Logger.h"
 #include <dlfcn.h>
 #include <stdexcept>
 
-#include "../../commands/stop_command/StopCommand.h"
-#include "../../commands/help_command/HelpCommand.h"
+#include "server/commands/stop_command/StopCommand.h"
+#include "server/commands/help_command/HelpCommand.h"
 
 static CommandRegistry commandRegistry;
 
-int CommandSubsystem::init()
+int CommandManager::init()
 {
     std::string commandLibPath = "/home/msullivan/Development/GitHub/ChatApplication/";
 
@@ -26,7 +26,7 @@ int CommandSubsystem::init()
 }
 
 
-//void CommandSubsystem::loadCommand(const std::string &libPath)
+//void CommandManager::loadCommand(const std::string &libPath)
 //{
 //    void *handle = dlopen(libPath.c_str(), RTLD_LAZY);
 //

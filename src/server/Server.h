@@ -3,7 +3,7 @@
 //
 
 #pragma once
-#include "EventManager.h"
+#include "SignalManager.h"
 #include <atomic>
 #include <condition_variable>
 #include <unordered_map>
@@ -16,7 +16,7 @@ class Server {
     Server();
     ~Server() = default;
 
-    EventManager m_EventManager;
+    SignalManager m_EventManager;
     std::unordered_map<std::string, std::unique_ptr<Subsystem>> m_Subsystems;
 
     std::atomic<bool> m_Running;
@@ -43,7 +43,7 @@ public:
     [[nodiscard]] bool isRunning() const { return m_Running; }
     [[nodiscard]] bool isDaemonized() const { return m_Daemonized; }
     [[nodiscard]] std::string workingDirectory() const { return m_WorkingDirectory; }
-    [[nodiscard]] EventManager &eventManager() { return m_EventManager; }
+    [[nodiscard]] SignalManager &signalManager() { return m_EventManager; }
 
     // Subservice stuff
     void registerSubsystem(std::unique_ptr<Subsystem> subsystem);
@@ -61,4 +61,3 @@ private:
 };
 
 #define server Server::instance()
-#define events server.eventManager()

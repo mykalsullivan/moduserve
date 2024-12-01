@@ -2,9 +2,7 @@
 add_executable(XServer
         main.cpp
         Server.cpp
-        Message.cpp
-        User.cpp
-        ServerConnection.cpp
+        SubsystemManager.cpp
 )
 
 # Link dependencies to the server executable
@@ -12,7 +10,6 @@ target_link_libraries(XServer
         XServerCommon
         ConnectionSubsystem
         MessageSubsystem
-        CommandSubsystem
         UserSubsystem
 )
 

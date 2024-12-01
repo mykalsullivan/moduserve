@@ -17,4 +17,4 @@
 - Allow the user to enable debug logging with a switch upon startup (server)
 - Remove some of the unnecessary directories in "subsystems"
 - When a connection is removed, there should be the option to give a reason WHY they are being removed
-- There needs to be events/an event queue so that everything can run in order
+- There needs to be signalManager/an event queue so that everything can run in order

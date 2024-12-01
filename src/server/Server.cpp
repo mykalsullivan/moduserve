@@ -3,14 +3,12 @@
 //
 
 #include "Server.h"
-#include "ServerConnection.h"
 #include "common/PCH.h"
 #include <filesystem>
 
-#include "subsystems/Subsystem.h"
 #include "subsystems/connection_subsystem/ConnectionSubsystem.h"
 #include "subsystems/message_subsystem/MessageSubsystem.h"
-#include "subsystems/command_subsystem/CommandSubsystem.h"
+#include "server/commands/CommandManager.h"
 #include "subsystems/user_subsystem/UserSubsystem.h"
 
 void printUsage();
@@ -82,7 +80,6 @@ int Server::init(int argc, char **argv)
     // 8. Register built-in subsystems
     registerSubsystem(std::make_unique<ConnectionSubsystem>());
     registerSubsystem(std::make_unique<MessageSubsystem>());
-    registerSubsystem(std::make_unique<CommandSubsystem>());
     registerSubsystem(std::make_unique<UserSubsystem>());
 
     // 9. Initialize subsystems

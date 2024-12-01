@@ -1,8 +1,9 @@
 # Create a static library for the common code
 add_library(XServerCommon STATIC
+        PCH.cpp
         Connection.cpp
         Logger.cpp
-        PCH.cpp
+        Message.cpp
 )
 
 # Set the include directories for the static library
