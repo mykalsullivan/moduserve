@@ -6,12 +6,17 @@
 #include "common/PCH.h"
 #include "common/Connection.h"
 #include "server/Server.h"
-#include "server/subsystems/broadcast_subsystem/BroadcastSubsystem.h"
 #include "server/subsystems/command_subsystem/CommandSubsystem.h"
 #include "server/commands/Command.h"
+#include "server/Signal.h"
 
 int MessageSubsystem::init()
 {
+    // Register signals with the EventManager
+    events.registerSignal("onReceive", onReceive);
+
+    // Connect the signal to slot
+    onReceive.connect(&MessageSubsystem::handleMessage);
     return 0;
 }
 
@@ -25,7 +30,7 @@ void MessageSubsystem::handleMessage(const Connection &sender, const std::string
 }
 
 // This needs to parse messages and commands properly (commands use '/' delimiter)
-void MessageSubsystem::parseMessage(const Connection &sender, const std::string &message) const
+void MessageSubsystem::parseMessage(const Connection &sender, const std::string &message)
 {
     if (message[0] == '/')
     {
@@ -45,7 +50,8 @@ void MessageSubsystem::parseMessage(const Connection &sender, const std::string 
     else
     {
         logMessage(LogLevel::INFO,  + "Client @ " + sender.getIP() + ':' + std::to_string(sender.getPort()) + " sent: \"" + message + '\"');
-        auto broadcastSubsystem = dynamic_cast<BroadcastSubsystem *>(Server::instance().subsystem("BroadcastSubsystem"));
-        broadcastSubsystem->broadcastMessage(sender, message);
+        auto signal = events.getSignal<Signal<const Connection &, const std::string &>>("onBroadcast");
+        if (signal)
+            signal->emit(sender, message);
     }
 }

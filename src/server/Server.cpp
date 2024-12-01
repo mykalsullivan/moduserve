@@ -10,12 +10,10 @@
 #include "subsystems/Subsystem.h"
 #include "subsystems/connection_subsystem/ConnectionSubsystem.h"
 #include "subsystems/message_subsystem/MessageSubsystem.h"
-#include "subsystems/broadcast_subsystem/BroadcastSubsystem.h"
 #include "subsystems/command_subsystem/CommandSubsystem.h"
 #include "subsystems/user_subsystem/UserSubsystem.h"
 
 void printUsage();
-int port = 0;
 
 Server::Server() : m_Running(false)
 {}
@@ -70,7 +68,7 @@ int Server::init(int argc, char **argv)
         switch (opt)
         {
             case 'p':
-                port = std::stoi(optarg);
+                //port = std::stoi(optarg);
             break;
             case 'h':
                 printUsage();
@@ -81,50 +79,9 @@ int Server::init(int argc, char **argv)
             return -1;
         }
 
-    // 3. Create server connection
-    auto serverConnection = new ServerConnection();
-
-    // 4. Create socket
-    if (!serverConnection->createSocket())
-    {
-        logMessage(LogLevel::ERROR, "Failed to create socket");
-        delete serverConnection;
-        exit(EXIT_FAILURE);
-    }
-    logMessage(LogLevel::DEBUG, "Created server socket: " + std::to_string(serverConnection->getFD()));
-
-    // 5. Create server address
-    if (!serverConnection->createAddress(port))
-    {
-        logMessage(LogLevel::ERROR, "Failed to create address");
-        delete serverConnection;
-        exit(EXIT_FAILURE);
-    }
-    logMessage(LogLevel::DEBUG, "Successfully created server address (listening on all interfaces)");
-
-    // 6. Bind socket to address
-    if (!serverConnection->bindAddress())
-    {
-        logMessage(LogLevel::ERROR, "Failed to bind address");
-        delete serverConnection;
-        exit(EXIT_FAILURE);
-    }
-    logMessage(LogLevel::DEBUG, "Successfully bound to address (" + serverConnection->getIP() + ':' + std::to_string(serverConnection->getPort()) + ')');
-
-    // 7. Listen to incoming connections
-    if (!serverConnection->startListening())
-    {
-        logMessage(LogLevel::ERROR, "Cannot listen to incoming connections");
-        delete serverConnection;
-        exit(EXIT_FAILURE);
-    }
-    logMessage(LogLevel::INFO, "Listening for new connections on " + serverConnection->getIP() + ':' +
-                        std::to_string(serverConnection->getPort()) + ')');
-
     // 8. Register built-in subsystems
-    registerSubsystem(std::make_unique<ConnectionSubsystem>(*serverConnection));
+    registerSubsystem(std::make_unique<ConnectionSubsystem>());
     registerSubsystem(std::make_unique<MessageSubsystem>());
-    registerSubsystem(std::make_unique<BroadcastSubsystem>());
     registerSubsystem(std::make_unique<CommandSubsystem>());
     registerSubsystem(std::make_unique<UserSubsystem>());
 
@@ -143,19 +100,20 @@ int Server::init(int argc, char **argv)
     return 0;
 }
 
-void Server::registerSubsystem(std::unique_ptr<Subsystem> subservice)
+void Server::registerSubsystem(std::unique_ptr<Subsystem> subsystem)
 {
-    const std::string &serviceName = subservice->name();
+    const std::string &subsystemName = subsystem->name();
 
     // Ensure thread safety with a lock
     std::lock_guard lock(m_Mutex);
 
-    if (!m_Subsystems.contains(serviceName))
+    if (!m_Subsystems.contains(subsystemName))
     {
-        m_Subsystems[serviceName] = std::move(subservice);
+        // Add subsystem to the registry
+        m_Subsystems[subsystemName] = std::move(subsystem);
         return;
     }
-    throw std::runtime_error("Subsystem with name '" + serviceName + "' is already registered.");
+    throw std::runtime_error("Subsystem with name '" + subsystemName + "' is already registered.");
 }
 
 Subsystem *Server::subsystem(const std::string &name) const

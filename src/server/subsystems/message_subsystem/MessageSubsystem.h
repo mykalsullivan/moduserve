@@ -12,14 +12,17 @@ class Message;
 
 class MessageSubsystem : public Subsystem {
 public:
-    MessageSubsystem() = default;
     ~MessageSubsystem() override = default;
 
+    Signal<> beforeParse;
+    Signal<> afterParse;
+    Signal<const Connection &, const std::string &> onReceive;
+
+public:
     int init() override;
     [[nodiscard]] constexpr std::string name() const override { return "MessageSubsystem"; }
 
-    void handleMessage(const Connection &sender, const std::string &message);
-
 private:
-    void parseMessage(const Connection &sender, const std::string &message) const;
+    static void handleMessage(const Connection &sender, const std::string &message);
+    static void parseMessage(const Connection &sender, const std::string &message);
 };

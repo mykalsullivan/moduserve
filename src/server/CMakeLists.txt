@@ -12,7 +12,6 @@ target_link_libraries(XServer
         XServerCommon
         ConnectionSubsystem
         MessageSubsystem
-        BroadcastSubsystem
         CommandSubsystem
         UserSubsystem
 )

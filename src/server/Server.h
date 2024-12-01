@@ -3,7 +3,7 @@
 //
 
 #pragma once
-#include <memory>
+#include "EventManager.h"
 #include <atomic>
 #include <condition_variable>
 #include <unordered_map>
@@ -16,6 +16,16 @@ class Server {
     Server();
     ~Server() = default;
 
+    EventManager m_EventManager;
+    std::unordered_map<std::string, std::unique_ptr<Subsystem>> m_Subsystems;
+
+    std::atomic<bool> m_Running;
+    bool m_Daemonized;
+    std::string m_WorkingDirectory;
+
+    mutable std::mutex m_Mutex;
+    std::condition_variable m_CV;
+
 public:
     // Singleton instance method
     static Server &instance();
@@ -26,16 +36,6 @@ public:
     Server &operator=(const Server &) = delete;
     Server &operator=(Server &&) = delete;
 
-private:
-    std::atomic<bool> m_Running;
-    bool m_Daemonized;
-    std::string m_WorkingDirectory;
-    std::unordered_map<std::string, std::unique_ptr<Subsystem>> m_Subsystems;
-
-    mutable std::mutex m_Mutex;
-    std::condition_variable m_CV;
-
-public:
     // Runtime stuff
     int run(int argc, char **argv);
     void stop();
@@ -43,9 +43,10 @@ public:
     [[nodiscard]] bool isRunning() const { return m_Running; }
     [[nodiscard]] bool isDaemonized() const { return m_Daemonized; }
     [[nodiscard]] std::string workingDirectory() const { return m_WorkingDirectory; }
+    [[nodiscard]] EventManager &eventManager() { return m_EventManager; }
 
     // Subservice stuff
-    void registerSubsystem(std::unique_ptr<Subsystem> subservice);
+    void registerSubsystem(std::unique_ptr<Subsystem> subsystem);
     Subsystem *subsystem(const std::string &name) const;
 
     // Command stuff
@@ -60,3 +61,4 @@ private:
 };
 
 #define server Server::instance()
+#define events server.eventManager()
