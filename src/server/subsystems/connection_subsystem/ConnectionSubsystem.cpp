@@ -89,7 +89,7 @@ bool ConnectionSubsystem::remove(int socketFD)
         m_Connections.erase(it);
 
         m_EventCV.notify_one();
-        logMessage(LogLevel::DEBUG, "Removed socket: " + std::to_string(socketFD));
+        logMessage(LogLevel::INFO, "Client @ " + it->second->getIP() + ':' + std::to_string(it->second->getPort()) + " disconnected");
         return true;
     }
     logMessage(LogLevel::ERROR, "Attempting to remove non-existent socket: " + std::to_string(socketFD));
@@ -143,9 +143,10 @@ void ConnectionSubsystem::acceptorThreadWork()
             {
                 logMessage(LogLevel::INFO, "Client @ " + client->getIP() + ':' + std::to_string(client->getPort()) + " connected");
 
-                auto broadcastSubsystem = dynamic_cast<BroadcastSubsystem *>(Server::instance().getSubsystem("BroadcastSubsystem"));
+                auto broadcastSubsystem = dynamic_cast<BroadcastSubsystem *>(Server::instance().subsystem(
+                        "BroadcastSubsystem"));
                 broadcastSubsystem->broadcastMessage(*m_Connections[m_ServerFD],
-                    "Client @ " + std::to_string(client->getFD()) + " (" + client->getIP() + ':' + std::to_string(client->getPort()) + ") connected");
+                    "Client @ " + client->getIP() + ':' + std::to_string(client->getPort()) + " connected");
             }
             else
             {
@@ -160,14 +161,14 @@ void ConnectionSubsystem::acceptorThreadWork()
 
 void ConnectionSubsystem::processMessage(Connection &connection, const std::string &message)
 {
-    logMessage(LogLevel::DEBUG, "Processing message...");
-    auto messageSubsystem = dynamic_cast<MessageSubsystem *>(Server::instance().getSubsystem("MessageSubsystem"));
+    //logMessage(LogLevel::DEBUG, "Processing message...");
+    auto messageSubsystem = dynamic_cast<MessageSubsystem *>(Server::instance().subsystem("MessageSubsystem"));
     messageSubsystem->handleMessage(connection, message);
 }
 
 void ConnectionSubsystem::processConnectionsInternal(const std::function<bool(Connection *)>& connectionPredicate)
 {
-    logMessage(LogLevel::DEBUG, "Processing connections...");
+    //logMessage(LogLevel::DEBUG, "Checking if connections need to be purged...");
 
     std::vector<int> connectionsToPurge;
     for (auto &it : m_Connections)
@@ -178,10 +179,7 @@ void ConnectionSubsystem::processConnectionsInternal(const std::function<bool(Co
 
         // If connection needs to be purged, delete it
         if (connectionPredicate(connection))
-        {
-            logMessage(LogLevel::DEBUG, "Connection " + std::to_string(fd) + " needs to be purged");
             connectionsToPurge.emplace_back(fd);
-        }
     }
 
     // Purge connections
@@ -191,31 +189,33 @@ void ConnectionSubsystem::processConnectionsInternal(const std::function<bool(Co
 
 void ConnectionSubsystem::validateConnections()
 {
-    logMessage(LogLevel::DEBUG, "Validating connections...");
+    //logMessage(LogLevel::DEBUG, "Validating connections...");
 
     processConnectionsInternal([](Connection *connection) {
-        bool isNullptr = false;
-        if (connection == nullptr) isNullptr = true;
-
-        std::string asdf = "isNullptr: " + std::to_string(isNullptr) + "; isValid(): " + std::to_string(connection->isValid()) + "; isInactive(30): " + std::to_string(connection->isInactive(30));
-        logMessage(LogLevel::DEBUG, asdf);
-        return !connection || !connection->isValid() || connection->isInactive(30); // invalid or inactive
+        return !(connection && connection->isValid() && !connection->isInactive(30)); // Purge invalid or inactive connections
     });
 }
 
 void ConnectionSubsystem::processConnections()
 {
-    logMessage(LogLevel::DEBUG, "Processing connections...");
+    //logMessage(LogLevel::DEBUG, "Processing connections...");
 
     // Check and process connections with data
     processConnectionsInternal([this](Connection* connection) {
         std::string message = connection->receiveData();
+
+        // Purge if the message is empty ...
+        if (!connection->hasPendingData() && message.empty())
+            return false;
+
         if (!message.empty())
         {
             // Process message if it's valid
             processMessage(*connection, message);
             return false; // Don't purge this connection
         }
-        return true; // If no message is received, we need to purge it
+
+        // Purge if no message is received and there is no pending data
+        return true;
     });
 }

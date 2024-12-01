@@ -3,11 +3,10 @@
 //
 
 #include "BroadcastSubsystem.h"
-#include "server/Server.h"
-#include "server/subsystems/connection_subsystem/ConnectionSubsystem.h"
 #include "common/Connection.h"
 #include "common/Logger.h"
-#include <unordered_map>
+#include "server/Server.h"
+#include "server/subsystems/connection_subsystem/ConnectionSubsystem.h"
 
 int BroadcastSubsystem::init()
 {
@@ -16,16 +15,9 @@ int BroadcastSubsystem::init()
 
 void BroadcastSubsystem::broadcastMessage(const Connection &sender, const std::string &message)
 {
-    logMessage(LogLevel::DEBUG, "Attempting to broadcast message...");
-
-    auto connectionSubsystem = dynamic_cast<ConnectionSubsystem *>(Server::instance().getSubsystem("ConnectionSubsystem"));
-    std::unordered_map<int, Connection *> connections;
-
-    for (size_t i = 0; i < connectionSubsystem->size(); i++)
-        connections.emplace(i, connectionSubsystem->get(i));
-
-    logMessage(LogLevel::DEBUG, "Retrieved " + std::to_string(connectionSubsystem->size()) + " connections; attempting to broadcast message...");
-    for (auto &[fd, connection] : connections)
+    //logMessage(LogLevel::DEBUG, "Attempting to broadcast message...");
+    auto connectionSubsystem = dynamic_cast<ConnectionSubsystem *>(Server::instance().subsystem("ConnectionSubsystem"));
+    for (auto &[fd, connection] : *connectionSubsystem)
     {
         // Skip server and sender
         if (fd == connectionSubsystem->serverFD() || fd == sender.getFD() || !connection) continue;

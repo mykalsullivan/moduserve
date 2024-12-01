@@ -18,28 +18,34 @@ int MessageSubsystem::init()
 // This will need to do other stuff in the future
 void MessageSubsystem::handleMessage(const Connection &sender, const std::string &message)
 {
-    logMessage(LogLevel::INFO,  + "Client @ " + sender.getIP() + ':' + std::to_string(sender.getPort()) + " sent: \"" + message + '\"');
-
     // ... do stuff ...
 
     // Handle message
     parseMessage(sender, message);
 }
 
-// This needs to parse messages properly
+// This needs to parse messages and commands properly (commands use '/' delimiter)
 void MessageSubsystem::parseMessage(const Connection &sender, const std::string &message) const
 {
-    auto commandSubsystem = dynamic_cast<CommandSubsystem *>(Server::instance().getSubsystem("CommandSubsystem"));
-    auto it = commandSubsystem->find(message);
-    if (it != commandSubsystem->end())
+    if (message[0] == '/')
     {
-        auto command = it->second.operator()();
-        command->execute(message);
-        delete command;
+        auto commandSubsystem = dynamic_cast<CommandSubsystem *>(Server::instance().subsystem("CommandSubsystem"));
+        auto it = commandSubsystem->find(message);
+        if (it != commandSubsystem->end())
+        {
+            auto command = it->second.operator()();
+            command->execute(message);
+            delete command;
+        }
+    }
+    else if (message == "KEEPALIVE")
+    {
+        logMessage(LogLevel::DEBUG, "Received keepalive from client @ " + sender.getIP() + ':' + std::to_string(sender.getPort()));
     }
     else
     {
-        auto broadcastSubsystem = dynamic_cast<BroadcastSubsystem *>(Server::instance().getSubsystem("BroadcastSubsystem"));
+        logMessage(LogLevel::INFO,  + "Client @ " + sender.getIP() + ':' + std::to_string(sender.getPort()) + " sent: \"" + message + '\"');
+        auto broadcastSubsystem = dynamic_cast<BroadcastSubsystem *>(Server::instance().subsystem("BroadcastSubsystem"));
         broadcastSubsystem->broadcastMessage(sender, message);
     }
 }

@@ -75,7 +75,6 @@ int Connection::getPort() const {
 
 bool Connection::sendData(const std::string &data) const
 {
-    logMessage(LogLevel::DEBUG, "Attempting to send data: \"" + data + '\"');
     if (m_FD != -1 && !data.empty())
     {
         ssize_t bytesSent = send(m_FD, data.c_str(), data.length(), 0);
@@ -85,7 +84,7 @@ bool Connection::sendData(const std::string &data) const
             logMessage(LogLevel::ERROR, "Error sending data: \"" + std::string(strerror(errno)) + '\"');
             return false;
         }
-        logMessage(LogLevel::DEBUG, "Sent message: \"" + data + '\"');
+        //logMessage(LogLevel::DEBUG, "Sent message: \"" + data + '\"');
         return true;
     }
     logMessage(LogLevel::DEBUG, "Attempted to send an empty data");
@@ -133,16 +132,23 @@ bool Connection::isValid() const
         // Check for other errors (e.g., ECONNRESET or EPIPE)
         return false;
     }
-    // Connection was closed by the other side
+    // Connection was closed by peer
     if (result == 0) return false;
     return true;
 }
+
+bool Connection::isInactive(int timeout) const
+{
+    auto currentTime = std::chrono::steady_clock::now();
+    return (currentTime - m_LastActivityTime) > std::chrono::seconds(timeout);
+}
+
 
 bool Connection::hasPendingData() const
 {
     if (m_FD == -1) return false;
     fd_set readFDs;
-    timeval timeout = { 1, 0 };
+    timeval timeout = { 0, 0 };
 
     FD_ZERO(&readFDs);      // Clear FD set
     FD_SET(m_FD, &readFDs); // Add m_FD to the set
@@ -153,13 +159,6 @@ bool Connection::hasPendingData() const
 
     // Return false if there is either an error or there is no pending data
     return false;
-}
-
-
-bool Connection::isInactive(int timeout) const
-{
-    auto currentTime = std::chrono::steady_clock::now();
-    return (currentTime - m_LastActivityTime) > std::chrono::seconds(timeout);
 }
 
 void Connection::updateLastActivityTime()

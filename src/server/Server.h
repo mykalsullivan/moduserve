@@ -46,7 +46,7 @@ public:
 
     // Subservice stuff
     void registerSubsystem(std::unique_ptr<Subsystem> subservice);
-    Subsystem *getSubsystem(const std::string &name) const;
+    Subsystem *subsystem(const std::string &name) const;
 
     // Command stuff
     void registerCommand(std::unique_ptr<Command> command);
