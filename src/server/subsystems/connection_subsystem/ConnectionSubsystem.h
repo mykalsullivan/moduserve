@@ -9,7 +9,6 @@
 
 // Forward declaration(s)
 class Connection;
-class ServerConnection;
 
 class ConnectionSubsystem : public Subsystem {
     std::thread m_AcceptorThread;
@@ -27,6 +26,11 @@ public signals:
     Signal<const Connection &> onDisconnect;
     Signal<const Connection &, const std::string &> onBroadcast;
 
+public slots:
+    static void onConnectFunction(const Connection &connection);
+    static void onDisconnectFunction(const Connection &connection);
+    static void broadcastMessage(const Connection &sender, const std::string &message);
+
 public:
     int init() override;
     [[nodiscard]] constexpr std::string name() const override { return "ConnectionSubsystem"; }
@@ -35,8 +39,4 @@ private:
     void processConnectionsInternal(const std::function<bool(Connection *)>& connectionPredicate);
     void processConnections();
     void validateConnections();
-
-    static void onConnectFunction(const Connection &connection);
-    static void onDisconnectFunction(const Connection &connection);
-    static void broadcastMessage(const Connection &sender, const std::string &message);
 };

@@ -6,7 +6,6 @@
 #include "common/PCH.h"
 #include "common/Connection.h"
 #include "server/Server.h"
-#include "server/subsystems/command_subsystem/CommandSubsystem.h"
 #include "server/commands/Command.h"
 #include "server/Signal.h"
 
@@ -34,14 +33,14 @@ void MessageSubsystem::parseMessage(const Connection &sender, const std::string 
 {
     if (message[0] == '/')
     {
-        auto commandSubsystem = dynamic_cast<CommandSubsystem *>(Server::instance().subsystem("CommandSubsystem"));
-        auto it = commandSubsystem->find(message);
-        if (it != commandSubsystem->end())
-        {
-            auto command = it->second.operator()();
-            command->execute(message);
-            delete command;
-        }
+//        auto commandSubsystem = dynamic_cast<CommandSubsystem *>(Server::instance().subsystem("CommandSubsystem"));
+//        auto it = commandSubsystem->find(message);
+//        if (it != commandSubsystem->end())
+//        {
+//            auto command = it->second.operator()();
+//            command->execute(message);
+//            delete command;
+//        }
     }
     else if (message == "KEEPALIVE")
     {
@@ -51,7 +50,6 @@ void MessageSubsystem::parseMessage(const Connection &sender, const std::string 
     {
         logMessage(LogLevel::INFO,  + "Client @ " + sender.getIP() + ':' + std::to_string(sender.getPort()) + " sent: \"" + message + '\"');
         auto signal = events.getSignal<Signal<const Connection &, const std::string &>>("onBroadcast");
-        if (signal)
-            signal->emit(sender, message);
+        if (signal) signal->emit(sender, message);
     }
 }
