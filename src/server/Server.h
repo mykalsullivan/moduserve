@@ -46,7 +46,7 @@ public:
 
     // Subservice stuff
     void registerSubsystem(std::unique_ptr<Subsystem> subservice);
-    Subsystem *subsystem(const std::string &name) const;
+    Subsystem *getSubsystem(const std::string &name) const;
 
     // Command stuff
     void registerCommand(std::unique_ptr<Command> command);
@@ -58,3 +58,5 @@ public:
 private:
     int init(int argc, char **argv);
 };
+
+#define server Server::instance()

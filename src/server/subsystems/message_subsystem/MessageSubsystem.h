@@ -15,12 +15,11 @@ public:
     MessageSubsystem() = default;
     ~MessageSubsystem() override = default;
 
-public:
     int init() override;
     [[nodiscard]] constexpr std::string name() const override { return "MessageSubsystem"; }
 
-    void handleMessage(Connection &sender, const std::string &message);
+    void handleMessage(const Connection &sender, const std::string &message);
 
 private:
-    void parseMessage(Connection &sender, const std::string &message) const;
+    void parseMessage(const Connection &sender, const std::string &message) const;
 };

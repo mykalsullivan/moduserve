@@ -61,5 +61,5 @@ public:
 
 #define slots
 #define signals
-#define connect(signal, emitter, slot) (signal).connect(emitter, slot)
+#define connectTo(signal, emitter, slot) (signal).connect(emitter, slot)
 #define emit(signal, ...) (signal).emit(__VA_ARGS__)

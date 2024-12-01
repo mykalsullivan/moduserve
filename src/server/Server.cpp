@@ -158,7 +158,7 @@ void Server::registerSubsystem(std::unique_ptr<Subsystem> subservice)
     throw std::runtime_error("Subsystem with name '" + serviceName + "' is already registered.");
 }
 
-Subsystem *Server::subsystem(const std::string &name) const
+Subsystem *Server::getSubsystem(const std::string &name) const
 {
     // Ensure thread safety with a lock
     std::lock_guard lock(m_Mutex);

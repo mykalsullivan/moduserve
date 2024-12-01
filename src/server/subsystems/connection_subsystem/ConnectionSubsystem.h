@@ -34,8 +34,8 @@ private:
     std::condition_variable m_EventCV;
 
 public signals:
-    Signal<void> onAdd;
-    Signal<void> onRemove;
+    Signal<void()> onAccept;
+    Signal<void()> onDisconnect;
 
 public:
     int init() override;
@@ -43,17 +43,14 @@ public:
 
     [[nodiscard]] size_t size() const { return m_Connections.size(); }
     [[nodiscard]] bool empty() const { return m_Connections.empty(); }
-    [[nodiscard]] std::unordered_map<int, Connection *>::iterator begin() { return m_Connections.begin(); }
-    [[nodiscard]] std::unordered_map<int, Connection *>::iterator end() { return m_Connections.end(); }
+    [[nodiscard]] auto begin() { return m_Connections.begin(); }
+    [[nodiscard]] auto end() { return m_Connections.end(); }
     [[nodiscard]] int serverFD() const { return m_ServerFD; }
 
     bool add(Connection &connection);
     bool remove(int socketFD);
     [[nodiscard]] Connection *get(int fd);
     [[nodiscard]] Connection *operator[](int fd);
-
-public:
-
 
 private:
     void eventThreadWork();

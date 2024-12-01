@@ -41,6 +41,11 @@ bool Connection::createSocket()
             LOG(LogLevel::ERROR, "Failed to to set socket to non-blocking mode");
             return false;
         }
+
+        // Enable keepalive (may remove in the future, I dunno)
+        int enableKeepalive = 1;
+        setsockopt(m_FD, SOL_SOCKET, SO_KEEPALIVE, &enableKeepalive, sizeof(enableKeepalive));
+
         return true;
     }
     LOG(LogLevel::ERROR, m_FD + ": Socket creation failed");

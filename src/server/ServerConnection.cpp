@@ -48,7 +48,5 @@ Connection *ServerConnection::acceptClient()
     auto client = new Connection();
     client->setSocket(clientFD);
     client->setAddress(clientAddress);
-    client->enableKeepalive();
-
     return client;
 }

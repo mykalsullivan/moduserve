@@ -46,7 +46,7 @@ ConnectionSubsystem::~ConnectionSubsystem()
         m_Connections.erase(m_ServerFD);
     }
 
-    LOG(LogLevel::INFO, "(ConnectionSubsystem) Started");
+    LOG(LogLevel::INFO, "(ConnectionSubsystem) Stopped");
 }
 
 int ConnectionSubsystem::init()
@@ -57,7 +57,7 @@ int ConnectionSubsystem::init()
     // Start event loop thread
     m_EventThread = std::thread(&ConnectionSubsystem::eventThreadWork, this);
 
-    LOG(LogLevel::INFO, "(ConnectionSubsystem) Stopped");
+    LOG(LogLevel::INFO, "(ConnectionSubsystem) Started");
     return 0;
 }
 
@@ -143,8 +143,10 @@ void ConnectionSubsystem::acceptorThreadWork()
             if (add(*client))
             {
                 LOG(LogLevel::INFO, "Client @ " + client->getIP() + ':' + std::to_string(client->getPort()) + " connected");
-                //m_BroadcastManager.broadcastMessage(*m_Connections[m_ServerFD],
-                //    "Client @ " + std::to_string(client->getFD()) + " (" + client->getIP() + ':' + std::to_string(client->getPort()) + ") connected");
+
+                auto broadcastSubsystem = dynamic_cast<BroadcastSubsystem *>(Server::instance().getSubsystem("BroadcastSubsystem"));
+                broadcastSubsystem->broadcastMessage(*m_Connections[m_ServerFD],
+                    "Client @ " + std::to_string(client->getFD()) + " (" + client->getIP() + ':' + std::to_string(client->getPort()) + ") connected");
             }
             else
             {
@@ -159,7 +161,8 @@ void ConnectionSubsystem::acceptorThreadWork()
 
 void ConnectionSubsystem::processMessage(Connection &connection, const std::string &message)
 {
-    //m_MessageProcessor.handleMessage(connection, message);
+    auto messageSubsystem = dynamic_cast<MessageSubsystem *>(Server::instance().getSubsystem("MessageSubsystem"));
+    messageSubsystem->handleMessage(connection, message);
 }
 
 void ConnectionSubsystem::validateConnections()

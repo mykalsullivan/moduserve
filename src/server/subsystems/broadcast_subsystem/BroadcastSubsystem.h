@@ -18,5 +18,5 @@ public:
     int init() override;
     [[nodiscard]] constexpr std::string name() const override { return "BroadcastSubsystem"; }
 
-    void broadcastMessage(Connection &sender, const std::string &message);
+    void broadcastMessage(const Connection &sender, const std::string &message);
 };

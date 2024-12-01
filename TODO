@@ -12,3 +12,5 @@
 - Include the built-in subsystem headers in the subsystem API
 - Combine UserAuthenticator and UserSubsystem, or remove them both, or allow the option to use authentication
 - Commands need a more centralized way to be registered
+- Simplify the Connection class by moving the functionality from some of the functions directly into the constuctor
+- Include usage info on the Command class
