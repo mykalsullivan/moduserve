@@ -10,4 +10,5 @@ public:
     ~HelpCommand() override = default;
     void execute(const std::string &args) override;
     [[nodiscard]] constexpr std::string name() const override { return "help"; }
+    [[nodiscard]] std::string usage() const override;
 };

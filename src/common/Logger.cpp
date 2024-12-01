@@ -3,16 +3,32 @@
 //
 
 #include "Logger.h"
-#include "PCH.h"
 #include <iomanip>
 
-Logger &Logger::instance()
+std::string getCurrentTimestamp()
 {
-    static Logger instance;
-    return instance;
+    auto now = std::chrono::system_clock::now();
+    auto timePoint = std::chrono::system_clock::to_time_t(now);
+    std::tm tm = *std::localtime(&timePoint);
+
+    std::ostringstream timestampStream;
+    timestampStream << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
+    return timestampStream.str();
 }
 
-void Logger::logMessage(LogLevel level = LogLevel::INFO, const std::string &message = "")
+std::string logLevelToString(LogLevel level)
+{
+    switch (level)
+    {
+        case LogLevel::DEBUG: return "DEBUG";
+        case LogLevel::INFO: return "INFO";
+        case LogLevel::WARNING: return "WARNING";
+        case LogLevel::ERROR: return "ERROR";
+        default: return "UNKNOWN";
+    }
+}
+
+void logMessage(LogLevel level, const std::string &message)
 {
     std::string timestamp = getCurrentTimestamp();
     std::string levelStr = logLevelToString(level);
@@ -39,27 +55,4 @@ void Logger::logMessage(LogLevel level = LogLevel::INFO, const std::string &mess
     std::ostringstream logStream;
     logStream << colorCode << "[" << timestamp << "] [" << levelStr << "] " << message << "\033[0m";
     std::cout << logStream.str() << std::endl;
-}
-
-std::string Logger::getCurrentTimestamp() const
-{
-    auto now = std::chrono::system_clock::now();
-    auto timePoint = std::chrono::system_clock::to_time_t(now);
-    std::tm tm = *std::localtime(&timePoint);
-
-    std::ostringstream timestampStream;
-    timestampStream << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
-    return timestampStream.str();
-}
-
-std::string Logger::logLevelToString(LogLevel level) const
-{
-    switch (level)
-    {
-        case LogLevel::DEBUG: return "DEBUG";
-        case LogLevel::INFO: return "INFO";
-        case LogLevel::WARNING: return "WARNING";
-        case LogLevel::ERROR: return "ERROR";
-        default: return "UNKNOWN";
-    }
 }

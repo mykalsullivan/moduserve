@@ -29,7 +29,7 @@ void CommandSubsystem::loadCommand(const std::string &libPath)
 
     if (!handle)
     {
-        LOG(LogLevel::ERROR, "Failed to open library: " + std::string(dlerror()))
+        logMessage(LogLevel::ERROR, "Failed to open library: " + std::string(dlerror()));
         return;
     }
 
@@ -38,7 +38,7 @@ void CommandSubsystem::loadCommand(const std::string &libPath)
 
     if (!factoryFunction)
     {
-        LOG(LogLevel::ERROR, "Failed to load command: " + std::string(dlerror()))
+        logMessage(LogLevel::ERROR, "Failed to load command: " + std::string(dlerror()));
         dlclose(handle);
         return;
     }
@@ -46,7 +46,7 @@ void CommandSubsystem::loadCommand(const std::string &libPath)
     auto command = factoryFunction();
     if (!command)
     {
-        LOG(LogLevel::ERROR, "Failed to create command instance")
+        logMessage(LogLevel::ERROR, "Failed to create command instance");
         dlclose(handle);
         return;
     }
@@ -54,7 +54,7 @@ void CommandSubsystem::loadCommand(const std::string &libPath)
     std::string commandName = command->name();
 
     registerCommand(commandName, [factoryFunction] { return factoryFunction(); });
-    LOG(LogLevel::INFO, "Loaded command: \"" + commandName + '\"')
+    logMessage(LogLevel::INFO, "Loaded command: \"" + commandName + '\"');
 }
 
 void CommandSubsystem::registerCommand(const std::string &name, const CommandFactory &factory)

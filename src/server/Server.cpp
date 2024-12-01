@@ -28,7 +28,7 @@ Server &Server::instance()
 
 int Server::run(int argc, char **argv)
 {
-    LOG(LogLevel::INFO, "Starting XServer...")
+    logMessage(LogLevel::INFO, "Starting XServer...");
 
     int initResult = init(argc, argv);
     if (initResult != 0) return initResult;
@@ -47,7 +47,7 @@ void Server::stop()
 {
     m_Running = false;
     m_CV.notify_one();
-    LOG(LogLevel::INFO, "Server shutting down...");
+    logMessage(LogLevel::INFO, "Server shutting down...");
 }
 
 int Server::init(int argc, char **argv)
@@ -56,11 +56,11 @@ int Server::init(int argc, char **argv)
     try
     {
         m_WorkingDirectory = std::filesystem::current_path().string();
-        LOG(LogLevel::INFO, "Current working directory: " + m_WorkingDirectory);
+        logMessage(LogLevel::INFO, "Current working directory: " + m_WorkingDirectory);
     }
     catch (const std::filesystem::filesystem_error &e)
     {
-        LOG(LogLevel::ERROR, "Failed to retrieve working directory");
+        logMessage(LogLevel::ERROR, "Failed to retrieve working directory");
         exit(EXIT_FAILURE);
     }
 
@@ -87,38 +87,38 @@ int Server::init(int argc, char **argv)
     // 4. Create socket
     if (!serverConnection->createSocket())
     {
-        LOG(LogLevel::ERROR, "Failed to create socket");
+        logMessage(LogLevel::ERROR, "Failed to create socket");
         delete serverConnection;
         exit(EXIT_FAILURE);
     }
-    LOG(LogLevel::DEBUG, "Created server socket: " + std::to_string(serverConnection->getFD()));
+    logMessage(LogLevel::DEBUG, "Created server socket: " + std::to_string(serverConnection->getFD()));
 
     // 5. Create server address
     if (!serverConnection->createAddress(port))
     {
-        LOG(LogLevel::ERROR, "Failed to create address");
+        logMessage(LogLevel::ERROR, "Failed to create address");
         delete serverConnection;
         exit(EXIT_FAILURE);
     }
-    LOG(LogLevel::DEBUG, "Successfully created server address (listening on all interfaces)");
+    logMessage(LogLevel::DEBUG, "Successfully created server address (listening on all interfaces)");
 
     // 6. Bind socket to address
     if (!serverConnection->bindAddress())
     {
-        LOG(LogLevel::ERROR, "Failed to bind address");
+        logMessage(LogLevel::ERROR, "Failed to bind address");
         delete serverConnection;
         exit(EXIT_FAILURE);
     }
-    LOG(LogLevel::DEBUG, "Successfully bound to address (" + serverConnection->getIP() + ':' + std::to_string(serverConnection->getPort()) + ')');
+    logMessage(LogLevel::DEBUG, "Successfully bound to address (" + serverConnection->getIP() + ':' + std::to_string(serverConnection->getPort()) + ')');
 
     // 7. Listen to incoming connections
     if (!serverConnection->startListening())
     {
-        LOG(LogLevel::ERROR, "Cannot listen to incoming connections");
+        logMessage(LogLevel::ERROR, "Cannot listen to incoming connections");
         delete serverConnection;
         exit(EXIT_FAILURE);
     }
-    LOG(LogLevel::INFO, "Listening for new connections on " + serverConnection->getIP() + ':' +
+    logMessage(LogLevel::INFO, "Listening for new connections on " + serverConnection->getIP() + ':' +
                         std::to_string(serverConnection->getPort()) + ')');
 
     // 8. Register built-in subsystems
@@ -133,10 +133,10 @@ int Server::init(int argc, char **argv)
     {
         int result = ss.second->init();
         if (result == 0)
-            LOG(LogLevel::INFO, "Subsystem \"" + ss.second->name() + "\" initialized")
+            logMessage(LogLevel::INFO, "Subsystem \"" + ss.second->name() + "\" initialized");
         else
         {
-            LOG(LogLevel::ERROR, "Subsystem \"" + ss.second->name() + "\" failed to initialize")
+            logMessage(LogLevel::ERROR, "Subsystem \"" + ss.second->name() + "\" failed to initialize");
             return 1;
         }
     }

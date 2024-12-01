@@ -10,6 +10,11 @@ void StopCommand::execute(const std::string &args)
     Server::instance().stop();
 }
 
+std::string StopCommand::usage() const
+{
+    return "stop - Stops the server";
+}
+
 extern "C" Command *importCommand()
 {
     return new StopCommand();

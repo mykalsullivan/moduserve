@@ -46,7 +46,7 @@ ConnectionSubsystem::~ConnectionSubsystem()
         m_Connections.erase(m_ServerFD);
     }
 
-    LOG(LogLevel::INFO, "(ConnectionSubsystem) Stopped");
+    logMessage(LogLevel::INFO, "(ConnectionSubsystem) Stopped");
 }
 
 int ConnectionSubsystem::init()
@@ -57,7 +57,7 @@ int ConnectionSubsystem::init()
     // Start event loop thread
     m_EventThread = std::thread(&ConnectionSubsystem::eventThreadWork, this);
 
-    LOG(LogLevel::INFO, "(ConnectionSubsystem) Started");
+    logMessage(LogLevel::INFO, "(ConnectionSubsystem) Started");
     return 0;
 }
 
@@ -74,7 +74,7 @@ bool ConnectionSubsystem::add(Connection &connection)
         m_EventCV.notify_one();
         return true;
     }
-    LOG(LogLevel::ERROR, "Attempting to add an existing connection");
+    logMessage(LogLevel::ERROR, "Attempting to add an existing connection");
     return false; // Connection already exists
 }
 
@@ -89,16 +89,15 @@ bool ConnectionSubsystem::remove(int socketFD)
         m_Connections.erase(it);
 
         m_EventCV.notify_one();
-        LOG(LogLevel::DEBUG, "Removed socket: " + std::to_string(socketFD));
+        logMessage(LogLevel::DEBUG, "Removed socket: " + std::to_string(socketFD));
         return true;
     }
-    LOG(LogLevel::ERROR, "Attempting to remove non-existent socket: " + std::to_string(socketFD));
+    logMessage(LogLevel::ERROR, "Attempting to remove non-existent socket: " + std::to_string(socketFD));
     return false; // Connection not found
 }
 
 Connection *ConnectionSubsystem::get(int fd)
 {
-    std::lock_guard lock(m_Mutex);
     auto it = m_Connections.find(fd);
     return (it != m_Connections.end()) ? it->second : nullptr;
 }
@@ -113,7 +112,7 @@ void ConnectionSubsystem::eventThreadWork()
     // Wait for all threads to be created
     m_ThreadBarrier.arrive_and_wait();
 
-    LOG(LogLevel::DEBUG, "(ConnectionSubsystem) Started event thread")
+    logMessage(LogLevel::DEBUG, "(ConnectionSubsystem) Started event thread");
     while (Server::instance().isRunning())
     {
         std::unique_lock lock(m_Mutex);
@@ -123,11 +122,11 @@ void ConnectionSubsystem::eventThreadWork()
         if (!Server::instance().isRunning()) break;
         lock.unlock();
 
-        std::vector<int> connectionsToPurge = processConnections();
-        purgeConnections(connectionsToPurge);
+        validateConnections();
+        processConnections();
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
-    LOG(LogLevel::DEBUG, "(ConnectionSubsystem) Stopped event thread")
+    logMessage(LogLevel::DEBUG, "(ConnectionSubsystem) Stopped event thread");
 }
 
 void ConnectionSubsystem::acceptorThreadWork()
@@ -135,14 +134,14 @@ void ConnectionSubsystem::acceptorThreadWork()
     // Wait for all threads to be created
     m_ThreadBarrier.arrive_and_wait();
 
-    LOG(LogLevel::DEBUG, "(ConnectionSubsystem) Started acceptor thread")
+    logMessage(LogLevel::DEBUG, "(ConnectionSubsystem) Started acceptor thread");
     while (Server::instance().isRunning())
     {
         if (auto client = reinterpret_cast<ServerConnection *>(m_Connections[m_ServerFD])->acceptClient())
         {
             if (add(*client))
             {
-                LOG(LogLevel::INFO, "Client @ " + client->getIP() + ':' + std::to_string(client->getPort()) + " connected");
+                logMessage(LogLevel::INFO, "Client @ " + client->getIP() + ':' + std::to_string(client->getPort()) + " connected");
 
                 auto broadcastSubsystem = dynamic_cast<BroadcastSubsystem *>(Server::instance().getSubsystem("BroadcastSubsystem"));
                 broadcastSubsystem->broadcastMessage(*m_Connections[m_ServerFD],
@@ -150,73 +149,73 @@ void ConnectionSubsystem::acceptorThreadWork()
             }
             else
             {
-                LOG(LogLevel::ERROR, "Failed to add client connection");
+                logMessage(LogLevel::ERROR, "Failed to add client connection");
                 delete client;
             }
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
-    LOG(LogLevel::DEBUG, "(ConnectionSubsystem) Stopped acceptor thread")
+    logMessage(LogLevel::DEBUG, "(ConnectionSubsystem) Stopped acceptor thread");
 }
 
 void ConnectionSubsystem::processMessage(Connection &connection, const std::string &message)
 {
+    logMessage(LogLevel::DEBUG, "Processing message...");
     auto messageSubsystem = dynamic_cast<MessageSubsystem *>(Server::instance().getSubsystem("MessageSubsystem"));
     messageSubsystem->handleMessage(connection, message);
 }
 
+void ConnectionSubsystem::processConnectionsInternal(const std::function<bool(Connection *)>& connectionPredicate)
+{
+    logMessage(LogLevel::DEBUG, "Processing connections...");
+
+    std::vector<int> connectionsToPurge;
+    for (auto &it : m_Connections)
+    {
+        int fd = it.first;
+        if (fd == m_ServerFD) continue; // Skip server connection
+        auto connection = it.second;
+
+        // If connection needs to be purged, delete it
+        if (connectionPredicate(connection))
+        {
+            logMessage(LogLevel::DEBUG, "Connection " + std::to_string(fd) + " needs to be purged");
+            connectionsToPurge.emplace_back(fd);
+        }
+    }
+
+    // Purge connections
+    for (auto i : connectionsToPurge)
+        remove(i);
+}
+
 void ConnectionSubsystem::validateConnections()
 {
-    std::vector<int> connectionsToPurge;
-    {
-        std::lock_guard lock(m_Mutex);
+    logMessage(LogLevel::DEBUG, "Validating connections...");
 
-        for (auto &it : m_Connections)
-        {
-            int fd = it.first;
-            if (fd == m_ServerFD) // Skip server
-                continue;
+    processConnectionsInternal([](Connection *connection) {
+        bool isNullptr = false;
+        if (connection == nullptr) isNullptr = true;
 
-            auto connection = it.second;
-            if (!connection || !connection->isValid() || connection->isInactive(30)) // Remove invalid connections
-                connectionsToPurge.emplace_back(fd);
-        }
-    }
-    purgeConnections(connectionsToPurge);
+        std::string asdf = "isNullptr: " + std::to_string(isNullptr) + "; isValid(): " + std::to_string(connection->isValid()) + "; isInactive(30): " + std::to_string(connection->isInactive(30));
+        logMessage(LogLevel::DEBUG, asdf);
+        return !connection || !connection->isValid() || connection->isInactive(30); // invalid or inactive
+    });
 }
 
-std::vector<int> ConnectionSubsystem::processConnections()
+void ConnectionSubsystem::processConnections()
 {
-    std::lock_guard lock(m_Mutex);
+    logMessage(LogLevel::DEBUG, "Processing connections...");
 
-    std::vector<int> connectionsToPurge;
-    for (auto it = m_Connections.begin(); it != m_Connections.end();)
-    {
-        int fd = it->first;
-        if (fd == m_ServerFD) // Skip server
+    // Check and process connections with data
+    processConnectionsInternal([this](Connection* connection) {
+        std::string message = connection->receiveData();
+        if (!message.empty())
         {
-            ++it;
-            continue;
+            // Process message if it's valid
+            processMessage(*connection, message);
+            return false; // Don't purge this connection
         }
-
-        auto connection = it->second;
-        if (connection->hasPendingData())
-        {
-            std::string message = connection->receiveData();
-            if (!message.empty())
-                processMessage(*connection, message);
-            else
-            {
-                LOG(LogLevel::INFO, "Client (" + connection->getIP() + ':' + std::to_string(connection->getPort()) + ") disconnected");
-                connectionsToPurge.emplace_back(fd);
-            }
-        }
-        ++it;
-    }
-    return connectionsToPurge;
-}
-
-void ConnectionSubsystem::purgeConnections(const std::vector<int> &connectionsToPurge)
-{
-    for (int fd : connectionsToPurge) remove(fd);
+        return true; // If no message is received, we need to purge it
+    });
 }

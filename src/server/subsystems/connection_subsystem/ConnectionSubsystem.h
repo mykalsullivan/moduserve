@@ -56,8 +56,9 @@ private:
     void eventThreadWork();
     void acceptorThreadWork();
 
-    std::vector<int> processConnections();
+    void processConnectionsInternal(const std::function<bool(Connection *)>& connectionPredicate);
+    void processConnections();
     void validateConnections();
-    void purgeConnections(const std::vector<int> &connectionsToPurge);
+
     void processMessage(Connection &connection, const std::string &message);
 };

@@ -6,7 +6,6 @@
 #include "common/PCH.h"
 #include "common/Connection.h"
 #include "server/Server.h"
-#include "server/subsystems/connection_subsystem/ConnectionSubsystem.h"
 #include "server/subsystems/broadcast_subsystem/BroadcastSubsystem.h"
 #include "server/subsystems/command_subsystem/CommandSubsystem.h"
 #include "server/commands/Command.h"
@@ -19,7 +18,7 @@ int MessageSubsystem::init()
 // This will need to do other stuff in the future
 void MessageSubsystem::handleMessage(const Connection &sender, const std::string &message)
 {
-    LOG(LogLevel::INFO,  + "Client @ " + sender.getIP() + ':' + std::to_string(sender.getPort()) + " sent: \"" + message + '\"');
+    logMessage(LogLevel::INFO,  + "Client @ " + sender.getIP() + ':' + std::to_string(sender.getPort()) + " sent: \"" + message + '\"');
 
     // ... do stuff ...
 

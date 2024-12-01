@@ -16,12 +16,15 @@ int BroadcastSubsystem::init()
 
 void BroadcastSubsystem::broadcastMessage(const Connection &sender, const std::string &message)
 {
+    logMessage(LogLevel::DEBUG, "Attempting to broadcast message...");
+
     auto connectionSubsystem = dynamic_cast<ConnectionSubsystem *>(Server::instance().getSubsystem("ConnectionSubsystem"));
     std::unordered_map<int, Connection *> connections;
 
-    for (int i = 0; i < connectionSubsystem->size(); i++)
+    for (size_t i = 0; i < connectionSubsystem->size(); i++)
         connections.emplace(i, connectionSubsystem->get(i));
 
+    logMessage(LogLevel::DEBUG, "Retrieved " + std::to_string(connectionSubsystem->size()) + " connections; attempting to broadcast message...");
     for (auto &[fd, connection] : connections)
     {
         // Skip server and sender
@@ -29,8 +32,8 @@ void BroadcastSubsystem::broadcastMessage(const Connection &sender, const std::s
 
         // Attempt to send message
         if (connection->sendData(message))
-            LOG(LogLevel::DEBUG, "Sent message to client @ " + connection->getIP() + ':' + std::to_string(connection->getPort()))
+            logMessage(LogLevel::DEBUG, "Sent message to client @ " + connection->getIP() + ':' + std::to_string(connection->getPort()));
         else
-            LOG(LogLevel::ERROR, "Failed to send message to client @ " + connection->getIP() + ':' + std::to_string(connection->getPort()))
+            logMessage(LogLevel::ERROR, "Failed to send message to client @ " + connection->getIP() + ':' + std::to_string(connection->getPort()));
     }
 }

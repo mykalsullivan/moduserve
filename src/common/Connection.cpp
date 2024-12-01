@@ -11,6 +11,7 @@ Connection::Connection()
     : m_FD(-1), m_Address()
 {
     memset(&m_Address, 0, sizeof(m_Address));
+    updateLastActivityTime();
 }
 
 Connection::~Connection()
@@ -33,12 +34,12 @@ bool Connection::createSocket()
         int flags = fcntl(m_FD, F_GETFL, 0);
         if (flags == -1)
         {
-            LOG(LogLevel::ERROR, "Failed to get socket flags");
+            logMessage(LogLevel::ERROR, "Failed to get socket flags");
             return false;
         }
         if (fcntl(m_FD, F_SETFL, flags | O_NONBLOCK) == -1)
         {
-            LOG(LogLevel::ERROR, "Failed to to set socket to non-blocking mode");
+            logMessage(LogLevel::ERROR, "Failed to to set socket to non-blocking mode");
             return false;
         }
 
@@ -48,7 +49,7 @@ bool Connection::createSocket()
 
         return true;
     }
-    LOG(LogLevel::ERROR, m_FD + ": Socket creation failed");
+    logMessage(LogLevel::ERROR, m_FD + ": Socket creation failed");
     return false;
 }
 
@@ -74,20 +75,20 @@ int Connection::getPort() const {
 
 bool Connection::sendData(const std::string &data) const
 {
-    //LOG(LogLevel::DEBUG, "Attempting to send message: " + message);
+    logMessage(LogLevel::DEBUG, "Attempting to send data: \"" + data + '\"');
     if (m_FD != -1 && !data.empty())
     {
         ssize_t bytesSent = send(m_FD, data.c_str(), data.length(), 0);
 
         if (bytesSent == -1)
         {
-            //LOG(LogLevel::ERROR, "Error sending message: " + std::string(strerror(errno)));
+            logMessage(LogLevel::ERROR, "Error sending data: \"" + std::string(strerror(errno)) + '\"');
             return false;
         }
-        //LOG(LogLevel::DEBUG, "Sent message: " + message);
+        logMessage(LogLevel::DEBUG, "Sent message: \"" + data + '\"');
         return true;
     }
-    //LOG(LogLevel::DEBUG, "Attempted to send an empty message");
+    logMessage(LogLevel::DEBUG, "Attempted to send an empty data");
     return false;
 }
 
@@ -103,9 +104,9 @@ std::string Connection::receiveData()
     if (bytesReceived <= 0)
     {
         if (bytesReceived == 0)
-            LOG(LogLevel::INFO, "Connection closed by peer")
+            logMessage(LogLevel::INFO, "Connection closed by peer");
         else
-            LOG(LogLevel::ERROR, "Error receiving data on connection")
+            logMessage(LogLevel::ERROR, "Error receiving data on connection");
         return "";
     }
 
@@ -126,7 +127,7 @@ bool Connection::isValid() const
         // If errno is EAGAIN or EWOULDBLOCK, it's just a non-blocking operation
         if (errno == EAGAIN || errno == EWOULDBLOCK)
         {
-            //LOG(LogLevel::DEBUG, "Non-blocking operation");
+            //logMessage(LogLevel::DEBUG, "Non-blocking operation");
             return true;
         }
         // Check for other errors (e.g., ECONNRESET or EPIPE)
@@ -141,7 +142,7 @@ bool Connection::hasPendingData() const
 {
     if (m_FD == -1) return false;
     fd_set readFDs;
-    timeval timeout = { 0, 0 };
+    timeval timeout = { 1, 0 };
 
     FD_ZERO(&readFDs);      // Clear FD set
     FD_SET(m_FD, &readFDs); // Add m_FD to the set

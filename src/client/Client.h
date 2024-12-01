@@ -10,27 +10,35 @@
 #include <mutex>
 
 class Client {
-public:
-    Client(int argc, char *argv[]);
+    Client();
     ~Client();
+
+public:
+    // Singleton instance method
+    static Client &instance();
+
+    // Delete copy constructor and assignment operators
+    Client(const Client &) = delete;
+    Client(Client &&) = delete;
+    Client &operator=(const Client &) = delete;
+    Client &operator=(Client &&) = delete;
 
 private:
     std::atomic<bool> m_Running;
     ClientConnection *m_Connection = nullptr;
-
     std::string m_Username;
-    std::mutex m_Mutex;
 
 public:
+    // Runtime
+    int init(int argc, char **argv);
+    int run(int argc, char **argv);
+    void stop();
+
     // Server connection
     bool connectToServer(const std::string &ip, int port, int timeout);
-    void closeConnection();
     [[nodiscard]] bool sendMessage(const std::string &message) const;
     [[nodiscard]] std::string receiveMessage() const;
 
     // User authentication
     bool authenticate();
-
-    // User input
-    void handleUserInput();
 };

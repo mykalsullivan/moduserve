@@ -23,18 +23,18 @@ int UserAuthenticationSubsystem::init()
         m_DatabaseConnection = new pqxx::connection(connectionString);
         if (m_DatabaseConnection->is_open())
         {
-            LOG(LogLevel::DEBUG, "Successfully connected to user database");
+            logMessage(LogLevel::DEBUG, "Successfully connected to user database");
         }
         else
         {
-            LOG(LogLevel::ERROR, "Failed to connect to user database");
+            logMessage(LogLevel::ERROR, "Failed to connect to user database");
             m_DatabaseConnection = nullptr;
             return 0;
         }
     }
     catch (const std::exception &e)
     {
-        LOG(LogLevel::ERROR, "Error connecting to database: " + std::string(e.what()));
+        logMessage(LogLevel::ERROR, "Error connecting to database: " + std::string(e.what()));
         m_DatabaseConnection = nullptr;
         return 1;
     }
@@ -45,7 +45,7 @@ bool UserAuthenticationSubsystem::authenticate(const std::string &username, cons
 {
     if (m_DatabaseConnection == nullptr)
     {
-        LOG(LogLevel::ERROR, "Database connection is not established.");
+        logMessage(LogLevel::ERROR, "Database connection is not established.");
         return false;
     }
 
@@ -57,7 +57,7 @@ bool UserAuthenticationSubsystem::authenticate(const std::string &username, cons
 
         if (result.empty())
         {
-            LOG(LogLevel::WARNING, "\"" + username + "\" could not be found in the database");
+            logMessage(LogLevel::WARNING, "\"" + username + "\" could not be found in the database");
             return false;
         }
 
@@ -67,11 +67,11 @@ bool UserAuthenticationSubsystem::authenticate(const std::string &username, cons
         if (storedHash == hashedPassword)
             return true; // Authentication successful
 
-        LOG(LogLevel::WARNING, "\"" + username + "\" provided an incorrect password");
+        logMessage(LogLevel::WARNING, "\"" + username + "\" provided an incorrect password");
     }
     catch (const std::exception &e)
     {
-        LOG(LogLevel::ERROR, "Error during authentication: " + std::string(e.what()));
+        logMessage(LogLevel::ERROR, "Error during authentication: " + std::string(e.what()));
     }
     return false;
 }
@@ -80,7 +80,7 @@ bool UserAuthenticationSubsystem::usernameExists(const std::string &username) co
 {
     if (m_DatabaseConnection == nullptr)
     {
-        LOG(LogLevel::ERROR, "Database connection is not established.");
+        logMessage(LogLevel::ERROR, "Database connection is not established.");
         return false;
     }
 
@@ -93,7 +93,7 @@ bool UserAuthenticationSubsystem::usernameExists(const std::string &username) co
     }
     catch (const std::exception &e)
     {
-        LOG(LogLevel::ERROR, "Error checking username uniqueness: " + std::string(e.what()));
+        logMessage(LogLevel::ERROR, "Error checking username uniqueness: " + std::string(e.what()));
     }
     return false;
 }

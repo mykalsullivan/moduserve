@@ -10,4 +10,5 @@ public:
     ~StopCommand() override = default;
     void execute(const std::string &args) override;
     [[nodiscard]] constexpr std::string name() const override { return "stop"; }
+    [[nodiscard]] std::string usage() const override;
 };

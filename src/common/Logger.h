@@ -12,19 +12,4 @@ enum class LogLevel {
     ERROR
 };
 
-class Logger {
-public:
-    Logger() = default;
-    ~Logger() = default;
-
-private:
-
-    [[nodiscard]] std::string getCurrentTimestamp() const;
-    [[nodiscard]] std::string logLevelToString(LogLevel level) const;
-
-public:
-    static Logger &instance();
-    void logMessage(LogLevel level, const std::string &message);
-};
-
-#define LOG(logLevel, message) Logger::instance().logMessage(logLevel, message);
+void logMessage(LogLevel level, const std::string &message);

@@ -14,3 +14,5 @@
 - Commands need a more centralized way to be registered
 - Simplify the Connection class by moving the functionality from some of the functions directly into the constuctor
 - Include usage info on the Command class
+- Allow the user to enable debug logging with a switch upon startup (server)
+- Remove some of the unnecessary directories in "subsystems"
