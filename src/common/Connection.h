@@ -26,8 +26,6 @@ public:
     [[nodiscard]] std::string getIP() const;
     [[nodiscard]] int getPort() const;
 
-    void enableKeepalive() const;
-
     [[nodiscard]] bool sendData(const std::string &data) const;
     [[nodiscard]] std::string receiveData();
 

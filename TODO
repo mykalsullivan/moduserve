@@ -7,3 +7,8 @@
 - Add Windows support
 - Allow the server to start as a daemon (but don't let the user start it as a daemon after it has already been started)
 - The logger should allow you to specify the sender of the log message
+- The server needs to be able to read custom subsystems as shared objects in a "custom_subsystems" directory
+    - Same idea for a "custom_commands" directory
+- Include the built-in subsystem headers in the subsystem API
+- Combine UserAuthenticator and UserSubsystem, or remove them both, or allow the option to use authentication
+- Commands need a more centralized way to be registered

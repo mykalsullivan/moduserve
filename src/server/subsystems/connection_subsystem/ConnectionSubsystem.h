@@ -4,6 +4,7 @@
 
 #pragma once
 #include "../Subsystem.h"
+#include "../Signal.h"
 #include <unordered_map>
 #include <string>
 #include <vector>
@@ -32,6 +33,10 @@ private:
     mutable std::mutex m_Mutex;
     std::condition_variable m_EventCV;
 
+public signals:
+    Signal<void> onAdd;
+    Signal<void> onRemove;
+
 public:
     int init() override;
     [[nodiscard]] constexpr std::string name() const override { return "ConnectionSubsystem"; }
@@ -46,6 +51,9 @@ public:
     bool remove(int socketFD);
     [[nodiscard]] Connection *get(int fd);
     [[nodiscard]] Connection *operator[](int fd);
+
+public:
+
 
 private:
     void eventThreadWork();

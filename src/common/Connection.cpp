@@ -67,13 +67,6 @@ int Connection::getPort() const {
     return ntohs(m_Address.sin_port);
 }
 
-void Connection::enableKeepalive() const
-{
-    int enableKeepalive = 1;
-    setsockopt(m_FD, SOL_SOCKET, SO_KEEPALIVE, &enableKeepalive, sizeof(enableKeepalive));
-}
-
-
 bool Connection::sendData(const std::string &data) const
 {
     //LOG(LogLevel::DEBUG, "Attempting to send message: " + message);

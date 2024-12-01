@@ -10,6 +10,7 @@
 
 // Forward declaration(s)
 class Subsystem;
+class Command;
 
 class Server {
     Server();
@@ -46,6 +47,10 @@ public:
     // Subservice stuff
     void registerSubsystem(std::unique_ptr<Subsystem> subservice);
     Subsystem *subsystem(const std::string &name) const;
+
+    // Command stuff
+    void registerCommand(std::unique_ptr<Command> command);
+    Command *command(const std::string &name) const;
 
     // Daemon stuff
     void daemonize();
