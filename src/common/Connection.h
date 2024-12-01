@@ -22,7 +22,6 @@ public:
     void setSocket(int fd);
     virtual void setAddress(sockaddr_in address);
     [[nodiscard]] int getFD() const { return m_FD; }
-    [[nodiscard]] sockaddr_in &getAddress() { return m_Address; }
     [[nodiscard]] std::string getIP() const;
     [[nodiscard]] int getPort() const;
 

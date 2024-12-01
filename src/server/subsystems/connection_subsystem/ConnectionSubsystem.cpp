@@ -29,14 +29,14 @@ ConnectionSubsystem::~ConnectionSubsystem()
 int ConnectionSubsystem::init()
 {
     // Connect the signals to slots
-    onBroadcast.connect(&ConnectionSubsystem::broadcastMessage);
-    onConnect.connect(&ConnectionSubsystem::onConnectFunction);
-    onDisconnect.connect(&ConnectionSubsystem::onDisconnectFunction);
+    CONNECT(onConnect, &ConnectionSubsystem::onConnectFunction);
+    CONNECT(onDisconnect, &ConnectionSubsystem::onDisconnectFunction);
+    CONNECT(onBroadcast, &ConnectionSubsystem::broadcastMessage);
 
     // Register signals with the SignalManager
-    server.signalManager().registerSignal("onBroadcast", onBroadcast);
-    server.signalManager().registerSignal("onConnect", onConnect);
-    server.signalManager().registerSignal("onDisconnect", onDisconnect);
+    REGISTER_SIGNAL("onConnect", onConnect);
+    REGISTER_SIGNAL("onDisconnect", onDisconnect);
+    REGISTER_SIGNAL("onBroadcast", onBroadcast);
 
     // Define and start acceptor thread
     m_AcceptorThread = std::thread([this] {
@@ -142,8 +142,9 @@ void ConnectionSubsystem::processConnections()
         {
             // Process message if it's valid
             //logMessage(LogLevel::DEBUG, "Processing message...");
-            auto signal = server.signalManager().getSignal<Signal<const Connection &, const std::string &>>("onReceive");
+            auto signal = SIGNAL("onReceive", const Connection &, const std::string &);
             if (signal)signal->emit(*connection, message);
+
             return false; // Don't purge this connection
         }
         // Purge if no message is received and there is no pending data

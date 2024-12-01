@@ -12,10 +12,10 @@
 int MessageSubsystem::init()
 {
     // Register signals with the SignalManager
-    server.signalManager().registerSignal("onReceive", onReceive);
+    REGISTER_SIGNAL("onReceive", onReceive);
 
     // Connect the signal to slot
-    onReceive.connect(&MessageSubsystem::handleMessage);
+    CONNECT(onReceive, &MessageSubsystem::handleMessage);
     return 0;
 }
 
@@ -49,7 +49,7 @@ void MessageSubsystem::parseMessage(const Connection &sender, const std::string 
     else
     {
         logMessage(LogLevel::INFO,  + "Client @ " + sender.getIP() + ':' + std::to_string(sender.getPort()) + " sent: \"" + message + '\"');
-        auto signal = server.signalManager().getSignal<Signal<const Connection &, const std::string &>>("onBroadcast");
+        auto signal = SIGNAL("onBroadcast", const Connection &, const std::string &);
         if (signal) signal->emit(sender, message);
     }
 }

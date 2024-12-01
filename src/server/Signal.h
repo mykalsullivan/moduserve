@@ -11,8 +11,10 @@
 
 template <typename... Args>
 class Signal {
+public:
     using Slot = std::function<void(Args...)>;
 
+private:
     std::vector<std::shared_ptr<Slot>> m_Slots;
     mutable std::shared_mutex m_Mutex;
 
@@ -66,3 +68,7 @@ public:
 
 #define slots
 #define signals
+#define SIGNAL(signalName, ...) server.signalManager().get<Signal<__VA_ARGS__>>(signalName)
+//#define SLOT(func, ...) std::make_shared<Signal<...>>(func)
+#define CONNECT(signal, slot) (signal).connect(slot)
+#define REGISTER_SIGNAL(signalName, signal) server.signalManager().registerSignal(signalName, signal)

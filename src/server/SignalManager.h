@@ -19,7 +19,7 @@ public:
     }
 
     template<typename SignalType>
-    SignalType *getSignal(const std::string& name)
+    SignalType *get(const std::string& name)
     {
         std::lock_guard<std::mutex> lock(m_Mutex);
         auto it = m_Signals.find(name);
