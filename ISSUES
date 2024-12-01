@@ -4,3 +4,5 @@
     - Instead, a CV will have to do. Maybe create a SubService virtual class?
 - I might remove the UserAuthenticator and UserManager classes out so that I can make the Server more abstract and extendable.
 - The server port should be random if not specified by the user upon startup
+- You can no longer specify the server port upon startup
+- Signals/slots need to be managed in a similar way to Qt

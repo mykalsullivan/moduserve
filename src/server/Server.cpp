@@ -8,12 +8,10 @@
 
 #include "subsystems/connection_subsystem/ConnectionSubsystem.h"
 #include "subsystems/message_subsystem/MessageSubsystem.h"
-#include "server/commands/CommandManager.h"
-#include "subsystems/user_subsystem/UserSubsystem.h"
 
 void printUsage();
 
-Server::Server() : m_Running(false)
+Server::Server() : m_Running(false), m_Daemonized(false)
 {}
 
 Server &Server::instance()
@@ -78,12 +76,11 @@ int Server::init(int argc, char **argv)
         }
 
     // 8. Register built-in subsystems
-    registerSubsystem(std::make_unique<ConnectionSubsystem>());
-    registerSubsystem(std::make_unique<MessageSubsystem>());
-    registerSubsystem(std::make_unique<UserSubsystem>());
+    m_SubsystemManager.registerSubsystem(std::make_unique<ConnectionSubsystem>());
+    m_SubsystemManager.registerSubsystem(std::make_unique<MessageSubsystem>());
 
     // 9. Initialize subsystems
-    for (auto &ss : m_Subsystems)
+    for (auto &ss : m_SubsystemManager)
     {
         int result = ss.second->init();
         if (result == 0)
@@ -96,34 +93,6 @@ int Server::init(int argc, char **argv)
     }
     return 0;
 }
-
-void Server::registerSubsystem(std::unique_ptr<Subsystem> subsystem)
-{
-    const std::string &subsystemName = subsystem->name();
-
-    // Ensure thread safety with a lock
-    std::lock_guard lock(m_Mutex);
-
-    if (!m_Subsystems.contains(subsystemName))
-    {
-        // Add subsystem to the registry
-        m_Subsystems[subsystemName] = std::move(subsystem);
-        return;
-    }
-    throw std::runtime_error("Subsystem with name '" + subsystemName + "' is already registered.");
-}
-
-Subsystem *Server::subsystem(const std::string &name) const
-{
-    // Ensure thread safety with a lock
-    std::lock_guard lock(m_Mutex);
-
-    auto it = m_Subsystems.find(name);
-    if (it != m_Subsystems.end())
-        return it->second.get();
-    throw std::runtime_error("Subsystem with name \"" + name + "\" not found.");
-}
-
 
 void printUsage()
 {

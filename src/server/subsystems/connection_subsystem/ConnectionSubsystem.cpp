@@ -29,9 +29,9 @@ ConnectionSubsystem::~ConnectionSubsystem()
 int ConnectionSubsystem::init()
 {
     // Connect the signals to slots
-    CONNECT(onConnect, &ConnectionSubsystem::onConnectFunction);
-    CONNECT(onDisconnect, &ConnectionSubsystem::onDisconnectFunction);
-    CONNECT(onBroadcast, &ConnectionSubsystem::broadcastMessage);
+    connectSignal(onConnect, &ConnectionSubsystem::onConnectFunction);
+    connectSignal(onDisconnect, &ConnectionSubsystem::onDisconnectFunction);
+    connectSignal(onBroadcast, &ConnectionSubsystem::broadcastMessage);
 
     // Register signals with the SignalManager
     REGISTER_SIGNAL("onConnect", onConnect);
@@ -142,7 +142,7 @@ void ConnectionSubsystem::processConnections()
         {
             // Process message if it's valid
             //logMessage(LogLevel::DEBUG, "Processing message...");
-            auto signal = SIGNAL("onReceive", const Connection &, const std::string &);
+            auto signal = GET_SIGNAL("onReceive", const Connection &, const std::string &);
             if (signal)signal->emit(*connection, message);
 
             return false; // Don't purge this connection

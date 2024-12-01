@@ -27,7 +27,7 @@ int UserAuthenticationSubsystem::init()
         }
         else
         {
-            logMessage(LogLevel::ERROR, "Failed to connect to user database");
+            logMessage(LogLevel::ERROR, "Failed to connectSignal to user database");
             m_DatabaseConnection = nullptr;
             return 0;
         }

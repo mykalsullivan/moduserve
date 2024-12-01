@@ -4,9 +4,10 @@
 
 #pragma once
 #include "SignalManager.h"
+#include "subsystems/SubsystemManager.h"
+#include "commands/CommandManager.h"
 #include <atomic>
 #include <condition_variable>
-#include <unordered_map>
 
 // Forward declaration(s)
 class Subsystem;
@@ -17,7 +18,8 @@ class Server {
     ~Server() = default;
 
     SignalManager m_EventManager;
-    std::unordered_map<std::string, std::unique_ptr<Subsystem>> m_Subsystems;
+    SubsystemManager m_SubsystemManager;
+    CommandManager m_CommandManager;
 
     std::atomic<bool> m_Running;
     bool m_Daemonized;
@@ -44,14 +46,8 @@ public:
     [[nodiscard]] bool isDaemonized() const { return m_Daemonized; }
     [[nodiscard]] std::string workingDirectory() const { return m_WorkingDirectory; }
     [[nodiscard]] SignalManager &signalManager() { return m_EventManager; }
-
-    // Subservice stuff
-    void registerSubsystem(std::unique_ptr<Subsystem> subsystem);
-    Subsystem *subsystem(const std::string &name) const;
-
-    // Command stuff
-    void registerCommand(std::unique_ptr<Command> command);
-    Command *command(const std::string &name) const;
+    [[nodiscard]] SubsystemManager &subsystemManager() { return m_SubsystemManager; }
+    [[nodiscard]] CommandManager &commandManager() { return m_CommandManager; }
 
     // Daemon stuff
     void daemonize();

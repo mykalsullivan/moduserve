@@ -15,7 +15,7 @@ int MessageSubsystem::init()
     REGISTER_SIGNAL("onReceive", onReceive);
 
     // Connect the signal to slot
-    CONNECT(onReceive, &MessageSubsystem::handleMessage);
+    connectSignal(onReceive, &MessageSubsystem::handleMessage);
     return 0;
 }
 
@@ -49,7 +49,7 @@ void MessageSubsystem::parseMessage(const Connection &sender, const std::string 
     else
     {
         logMessage(LogLevel::INFO,  + "Client @ " + sender.getIP() + ':' + std::to_string(sender.getPort()) + " sent: \"" + message + '\"');
-        auto signal = SIGNAL("onBroadcast", const Connection &, const std::string &);
+        auto signal = GET_SIGNAL("onBroadcast", const Connection &, const std::string &);
         if (signal) signal->emit(sender, message);
     }
 }

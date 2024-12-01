@@ -3,7 +3,7 @@
 //
 
 #include "CommandManager.h"
-#include "CommandRegistry.h"
+#include "server/commands/CommandRegistry.h"
 #include "common/Logger.h"
 #include <dlfcn.h>
 #include <stdexcept>

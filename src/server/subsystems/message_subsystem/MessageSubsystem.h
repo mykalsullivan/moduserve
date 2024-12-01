@@ -14,15 +14,16 @@ class MessageSubsystem : public Subsystem {
 public:
     ~MessageSubsystem() override = default;
 
-    Signal<> beforeParse;
-    Signal<> afterParse;
-    Signal<const Connection &, const std::string &> onReceive;
+public signals:
+    SIGNAL(beforeParse);
+    SIGNAL(afterParse);
+    SIGNAL(onReceive, const Connection &, const std::string &);
+
+private slots:
+    SLOT(handleMessage, void, const Connection &sender, const std::string &message);
+    SLOT(parseMessage, void, const Connection &sender, const std::string &message);
 
 public:
     int init() override;
     [[nodiscard]] constexpr std::string name() const override { return "MessageSubsystem"; }
-
-private:
-    static void handleMessage(const Connection &sender, const std::string &message);
-    static void parseMessage(const Connection &sender, const std::string &message);
 };

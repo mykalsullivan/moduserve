@@ -22,14 +22,14 @@ public:
     ~ConnectionSubsystem() override;
 
 public signals:
-    Signal<const Connection &> onConnect;
-    Signal<const Connection &> onDisconnect;
-    Signal<const Connection &, const std::string &> onBroadcast;
+    SIGNAL(onConnect, const Connection &);
+    SIGNAL(onDisconnect, const Connection &);
+    SIGNAL(onBroadcast, const Connection &, const std::string &);
 
-public slots:
-    static void onConnectFunction(const Connection &connection);
-    static void onDisconnectFunction(const Connection &connection);
-    static void broadcastMessage(const Connection &sender, const std::string &message);
+private slots:
+    SLOT(onConnectFunction, void, const Connection &connection);
+    SLOT(onDisconnectFunction, void, const Connection &connection);
+    SLOT(broadcastMessage, void, const Connection &sender, const std::string &message);
 
 public:
     int init() override;

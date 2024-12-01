@@ -15,3 +15,4 @@
 - Include usage info on the Command class
 - Allow the user to enable debug logging with a switch upon startup (server)
 - When a connection is removed, there should be the option to give a reason WHY they are being removed
+- Get another signal/slots mechanism and just drop it in. Making one myself is too complicated and probably not worth it
