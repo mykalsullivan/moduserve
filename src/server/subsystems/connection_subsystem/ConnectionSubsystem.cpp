@@ -7,6 +7,7 @@
 #include "server/Server.h"
 #include "ServerConnection.h"
 #include "common/Logger.h"
+#include "common/Message.h"
 #include <barrier>
 
 static ConnectionManager connectionManager;
@@ -53,7 +54,7 @@ int ConnectionSubsystem::init()
                     // Notify the event thread
                     m_ThreadCV.notify_one();
                     onBroadcast.emit(*connectionManager[connectionManager.serverFD()],
-                                     "Client @ " + client->getIP() + ':' + std::to_string(client->getPort()) +
+                                     "Client @ " + client->ip() + ':' + std::to_string(client->port()) +
                                      " connected");
                 }
                 else
@@ -154,15 +155,15 @@ void ConnectionSubsystem::processConnections()
 
 void ConnectionSubsystem::onConnectFunction(const Connection &connection)
 {
-    logMessage(LogLevel::INFO, "Client @ " + connection.getIP() + ':' + std::to_string(connection.getPort()) + " connected");
+    logMessage(LogLevel::INFO, "Client @ " + connection.ip() + ':' + std::to_string(connection.port()) + " connected");
 }
 
 void ConnectionSubsystem::onDisconnectFunction(const Connection &connection)
 {
-    logMessage(LogLevel::INFO, "Client @ " + connection.getIP() + ':' + std::to_string(connection.getPort()) + " disconnected");
+    logMessage(LogLevel::INFO, "Client @ " + connection.ip() + ':' + std::to_string(connection.port()) + " disconnected");
 }
 
-void ConnectionSubsystem::broadcastMessage(const Connection &sender, const std::string &message)
+void ConnectionSubsystem::broadcastMessage(const Connection &sender, const std::string &data)
 {
     //logMessage(LogLevel::DEBUG, "Attempting to broadcast message...");
     for (auto &[fd, connection] : connectionManager)
@@ -170,16 +171,18 @@ void ConnectionSubsystem::broadcastMessage(const Connection &sender, const std::
         // Skip server and sender
         if (fd == connectionManager.serverFD() || fd == sender.getFD() || !connection) continue;
 
-        // Attempt to send message
-        if (connection->sendData(message))
+        Message message(sender.ip(), sender.port(), data);
+
+        // Attempt to send data
+        if (connection->sendData(message.toString()))
             logMessage(LogLevel::DEBUG,
                        "Sent message to client @ " +
-                       connection->getIP() + ':' +
-                       std::to_string(connection->getPort()));
+                               connection->ip() + ':' +
+                       std::to_string(connection->port()));
         else
             logMessage(LogLevel::ERROR,
                        "Failed to send message to client @ " +
-                       connection->getIP() + ':' +
-                       std::to_string(connection->getPort()));
+                               connection->ip() + ':' +
+                       std::to_string(connection->port()));
     }
 }

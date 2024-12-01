@@ -63,13 +63,13 @@ void Connection::setAddress(sockaddr_in address)
     m_Address = address;
 }
 
-std::string Connection::getIP() const {
+std::string Connection::ip() const {
     char ipStr[INET_ADDRSTRLEN];
     inet_ntop(AF_INET, &(m_Address.sin_addr), ipStr, INET_ADDRSTRLEN);
     return std::string(ipStr);
 }
 
-int Connection::getPort() const {
+int Connection::port() const {
     return ntohs(m_Address.sin_port);
 }
 

@@ -8,16 +8,18 @@
 
 class Message {
 public:
-    explicit Message(int senderID = -1, std::string body = "");
+    [[maybe_unused]] Message(std::string ip, unsigned int port, std::string body);
 
 private:
-    int m_SenderID;
+    const std::string m_SenderIP;
+    const unsigned int m_SenderPort;
     std::string m_Content;
     std::chrono::system_clock::time_point m_Timestamp;
 
 public:
-    [[nodiscard]] int getSenderID() const { return m_SenderID; }
-    [[nodiscard]] std::string getContent() const { return m_Content; }
-    [[nodiscard]] std::string getTimestamp() const;
+    [[nodiscard]] std::string ip() const { return m_SenderIP; }
+    [[nodiscard]] unsigned int port() const { return m_SenderPort; }
+    [[nodiscard]] std::string content() const { return m_Content; }
+    [[nodiscard]] std::string timestamp() const;
     [[nodiscard]] std::string toString() const;
 };

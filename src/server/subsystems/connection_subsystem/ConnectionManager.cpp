@@ -41,7 +41,8 @@ ConnectionManager::ConnectionManager()
         delete serverConnection;
         exit(EXIT_FAILURE);
     }
-    logMessage(LogLevel::DEBUG, "Successfully bound to address (" + serverConnection->getIP() + ':' + std::to_string(serverConnection->getPort()) + ')');
+    logMessage(LogLevel::DEBUG, "Successfully bound to address (" + serverConnection->ip() + ':' + std::to_string(
+            serverConnection->port()) + ')');
 
     // 5. Listen to incoming connections
     if (!serverConnection->startListening())
@@ -50,8 +51,8 @@ ConnectionManager::ConnectionManager()
         delete serverConnection;
         exit(EXIT_FAILURE);
     }
-    logMessage(LogLevel::INFO, "Listening for new connections on " + serverConnection->getIP() + ':' +
-                               std::to_string(serverConnection->getPort()) + ')');
+    logMessage(LogLevel::INFO, "Listening for new connections on " + serverConnection->ip() + ':' +
+                               std::to_string(serverConnection->port()) + ')');
 
     add(*serverConnection);
     m_ServerFD = serverConnection->getFD();

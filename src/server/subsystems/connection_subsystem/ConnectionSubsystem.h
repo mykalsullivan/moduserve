@@ -29,7 +29,7 @@ public signals:
 private slots:
     SLOT(onConnectFunction, void, const Connection &connection);
     SLOT(onDisconnectFunction, void, const Connection &connection);
-    SLOT(broadcastMessage, void, const Connection &sender, const std::string &message);
+    SLOT(broadcastMessage, void, const Connection &sender, const std::string &data);
 
 public:
     int init() override;

@@ -69,20 +69,20 @@ int Client::run(int argc, char **argv)
             std::stringstream ss;
             ss << "\nHelp Menu:\n";
             ss << "/info                : Displays the current server connection info\n";
-            ss << "/connectSignal <ip> <port> : Connect to a different server\n";
-            ss << "/disconnectSignal          : Disconnects from the connected server\n";
+            ss << "/connect <ip> <port> : Connect to a different server\n";
+            ss << "/disconnect          : Disconnects from the connected server\n";
             ss << "/quit                : Disconnect from the server\n";
             ss << "/stop                : Stop the server\n";
             std::cout << ss.str() << '\n';
         }
         else if (input == "/info") {
             if (m_Connection != nullptr) {
-                std::cout << "Connected to " << m_Connection->getIP() << ':' << m_Connection->getPort() << '\n';
+                std::cout << "Connected to " << m_Connection->ip() << ':' << m_Connection->port() << '\n';
             } else {
                 std::cout << "There is no current server connection\n";
             }
         }
-        else if (input.substr(0, 8) == "/connectSignal") {
+        else if (input.substr(0, 8) == "/connect") {
             std::istringstream iss(input);
             std::string command;
             std::string newIP;
@@ -91,16 +91,15 @@ int Client::run(int argc, char **argv)
             iss >> command >> newIP >> newPort;
 
             if (newIP.empty() || newPort <= 0) {
-                std::cout << "Invalid IP or port for connection. Usage: /connectSignal <ip> <port>\n";
+                std::cout << "Invalid IP or port for connection. Usage: /connect <ip> <port>\n";
                 continue;
             }
             // Close current connection
             if (m_Connection != nullptr)
                 m_Connection->closeConnection();
-            std::cout << "Connecting to server " << newIP << ":" << newPort << "...\n";
             connectToServer(newIP, newPort, 5);
         }
-        else if (input == "/disconnectSignal") {
+        else if (input == "/connect") {
             if (m_Connection != nullptr)
                 m_Connection->closeConnection();
         }
@@ -129,6 +128,8 @@ void Client::stop()
 
 bool Client::connectToServer(const std::string &ip, int port, int timeout)
 {
+    logMessage(LogLevel::INFO, "Attempting to connect to server @ " + ip + ':' + std::to_string(port));
+
     // 1. Create connection
     m_Connection = new ClientConnection();
 
@@ -142,7 +143,7 @@ bool Client::connectToServer(const std::string &ip, int port, int timeout)
 
     // 4. Attempt to connectSignal to server
     if (m_Connection->connectToServer() < 0) {
-        std::cerr << "Failed to connectSignal to server (" << m_Connection->getIP() << ':' << m_Connection->getPort() << ")\n";
+        std::cerr << "Failed to connectSignal to server (" << m_Connection->ip() << ':' << m_Connection->port() << ")\n";
         delete m_Connection;
         m_Connection = nullptr;
         return false;
@@ -154,7 +155,7 @@ bool Client::connectToServer(const std::string &ip, int port, int timeout)
     // Start keepalive thread
     m_Connection->startKeepaliveThread();
 
-    std::cout << "\nSuccessfully connected to server (" << m_Connection->getIP() << ':' << m_Connection->getPort() << ")\n";
+    std::cout << "\nSuccessfully connected to server (" << m_Connection->ip() << ':' << m_Connection->port() << ")\n";
     return true;
 
     // Start authentication

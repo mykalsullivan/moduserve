@@ -4,13 +4,15 @@
 
 #include "Message.h"
 #include <iomanip>
+#include <utility>
 
+// Will eventually need to have JSON formatting
 
-Message::Message(int senderID, std::string content)
-        : m_SenderID(senderID), m_Content(std::move(content)), m_Timestamp(std::chrono::system_clock::now())
+[[maybe_unused]] Message::Message(std::string ip, unsigned int port, std::string content)
+        : m_SenderIP(std::move(ip)), m_SenderPort(port), m_Content(std::move(content)), m_Timestamp(std::chrono::system_clock::now())
 {}
 
-std::string Message::getTimestamp() const
+std::string Message::timestamp() const
 {
     auto time = std::chrono::system_clock::to_time_t(m_Timestamp);  // Convert to time_t
     std::tm* tm = std::localtime(&time);                             // Convert to local time
@@ -23,8 +25,9 @@ std::string Message::getTimestamp() const
 std::string Message::toString() const
 {
     std::stringstream ss;
-    ss << "[SenderID: " << m_SenderID << "] ";
-    ss << "[Timestamp: " << getTimestamp() << "] ";
+    ss << "[SenderIP: " << m_SenderIP << "] ";
+    ss << "[SenderPort: " << m_SenderPort << "] ";
+    ss << "[Timestamp: " << timestamp() << "] ";
     ss << "[Content: " << m_Content << "]";
     return ss.str();
 }

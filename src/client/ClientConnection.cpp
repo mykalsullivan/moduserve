@@ -33,7 +33,7 @@ bool ClientConnection::createAddress(const std::string& ip, int port)
 
 int ClientConnection::connectToServer()
 {
-    logMessage(LogLevel::DEBUG, "Attempting to connectSignal to server at " + getIP() + ':' + std::to_string(getPort()));
+    logMessage(LogLevel::DEBUG, "Attempting to connectSignal to server at " + ip() + ':' + std::to_string(port()));
 
     // Attempt to connectSignal
     int connectionResult = connect(m_FD, reinterpret_cast<sockaddr *>(&m_Address), sizeof(m_Address));
@@ -109,7 +109,7 @@ int ClientConnection::connectToServer()
 void ClientConnection::closeConnection()
 {
     if (m_FD != -1) {
-        logMessage(LogLevel::INFO, "Closing connection to " + getIP() + ':' + std::to_string(getPort()));
+        logMessage(LogLevel::INFO, "Closing connection to " + ip() + ':' + std::to_string(port()));
 
         close(m_FD);
         m_FD = -1;
@@ -159,7 +159,7 @@ void ClientConnection::startMessagePollingThread() {
                 if (message.empty())
                 {
                     logMessage(LogLevel::INFO,
-                        "Client (" + getIP() + ':' + std::to_string(getPort()) + ")'s connection reset (disconnected)");
+                               "Client (" + ip() + ':' + std::to_string(port()) + ")'s connection reset (disconnected)");
                     closeConnection();
                 }
             }
