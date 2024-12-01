@@ -1,0 +1,5 @@
+stop
+help
+kick
+list_users
+server_info
