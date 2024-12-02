@@ -29,7 +29,7 @@ ConnectionSubsystem::~ConnectionSubsystem()
     // Join the acceptor loop
     if (m_AcceptorThread.joinable()) m_AcceptorThread.join();
 
-#ifdef WIN32
+#ifdef _WIN32
     WSACleanup();
 #endif
     logMessage(LogLevel::Info, "(ConnectionSubsystem) Stopped");
@@ -37,7 +37,7 @@ ConnectionSubsystem::~ConnectionSubsystem()
 
 int ConnectionSubsystem::init()
 {
-#ifdef WIN32
+#ifdef _WIN32
     // Start Winsock
     WSAData wsaData {};
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
