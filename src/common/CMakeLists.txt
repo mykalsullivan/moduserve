@@ -6,10 +6,6 @@ add_library(XServerCommon STATIC
         Message.cpp
 )
 
-target_link_libraries(XServerCommon
-        ws2_32
-)
-
 # Set the include directories for the static library
 target_include_directories(XServerCommon PUBLIC
         ${PROJECT_SOURCE_DIR}/src       # Include the main source directory for other headers

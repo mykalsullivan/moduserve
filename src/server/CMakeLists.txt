@@ -11,6 +11,10 @@ target_link_libraries(XServer
         Commands
 )
 
+target_link_libraries(XServerCommon PRIVATE
+        ws2_32
+)
+
 include(CheckCXXSourceCompiles)
 
 check_cxx_source_compiles("
