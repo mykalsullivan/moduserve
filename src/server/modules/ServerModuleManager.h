@@ -16,13 +16,8 @@ class ServerModuleManager {
     std::mutex m_Mutex;
 
 public:
-    auto begin() const { return m_Subsystems.begin(); }
-    auto end() const { return m_Subsystems.end(); }
-    auto find(const std::string &name) const { return m_Subsystems.find(name); }
-    [[nodiscard]] bool contains(const std::string &name) const { return m_Subsystems.contains(name); }
-    [[nodiscard]] size_t size() const { return m_Subsystems.size(); }
-    
-    void registerModule(std::unique_ptr<ServerModule> module);
-    ServerModule *module(const std::string &name);
-    ServerModule *operator[](const std::string &name);
+    template <typename Module> void registerModule();
+    template <typename Module> bool hasModule();
+    template <typename Module> Module *module();
+    template <typename Module> Module *operator[]();
 };
