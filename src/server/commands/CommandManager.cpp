@@ -13,7 +13,7 @@
 
 static CommandRegistry commandRegistry;
 
-int CommandManager::init()
+CommandManager::CommandManager()
 {
     std::string commandLibPath = "/home/msullivan/Development/GitHub/ChatApplication/";
 
@@ -22,7 +22,6 @@ int CommandManager::init()
     //commandRegistry.emplace("help", std::make_shared<HelpCommand>());
 
     // Load custom commands
-    return 0;
 }
 
 

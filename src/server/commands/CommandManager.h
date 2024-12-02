@@ -6,6 +6,7 @@
 
 class CommandManager {
 public:
+    CommandManager();
     ~CommandManager() = default;
 
     void loadCommand(const std::string &libPath);
