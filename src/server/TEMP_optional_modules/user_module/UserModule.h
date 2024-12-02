@@ -20,7 +20,6 @@ private:
 
 public:
     int init() override;
-    [[nodiscard]] constexpr std::string name() const override { return "UserSubsystem"; }
 
     bool add(int socketID, User *user);
     bool remove(int connectionID);

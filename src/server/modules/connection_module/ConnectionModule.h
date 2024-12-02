@@ -36,7 +36,6 @@ private slots:
 
 public:
     int init() override;
-    [[nodiscard]] constexpr std::string name() const override { return "OldConnectionSubsystem"; }
 
 private:
     void processConnectionsInternal(const std::function<bool(OldConnection *)>& OldConnectionPredicate);

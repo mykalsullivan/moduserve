@@ -2,12 +2,15 @@
 add_executable(XServer
         main.cpp
         Server.cpp
+        TEMP_optional_modules/bf_module/BFModule.cpp
+        TEMP_optional_modules/bf_module/BFModule.h
 )
 
 # Link dependencies to the server executable
 target_link_libraries(XServer
         XServerCommon
-        Subsystems
+        ServerModules
+        OptionalServerModules
         Commands
 )
 

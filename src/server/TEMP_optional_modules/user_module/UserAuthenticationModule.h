@@ -17,7 +17,6 @@ private:
 
 public:
     int init() override;
-    [[nodiscard]] constexpr std::string name() const override { return "UserAuthenticationModule"; }
 
     bool sync();
     [[nodiscard]] int registerUser(const std::string &username, const std::string &password);

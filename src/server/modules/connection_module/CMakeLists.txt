@@ -1,4 +1,4 @@
-add_library(ConnectionSubsystem STATIC
+add_library(ConnectionModule STATIC
         ConnectionModule.cpp
         ConnectionManager.cpp
         ServerConnection.cpp
@@ -6,6 +6,6 @@ add_library(ConnectionSubsystem STATIC
         IOSystem.h
 )
 
-target_link_libraries(ConnectionSubsystem
+target_link_libraries(ConnectionModule
         XServerCommon
 )

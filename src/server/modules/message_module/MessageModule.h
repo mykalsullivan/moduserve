@@ -26,5 +26,4 @@ private slots:
 
 public:
     int init() override;
-    [[nodiscard]] constexpr std::string name() const override { return "MessageSubsystem"; }
 };
