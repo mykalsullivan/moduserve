@@ -6,7 +6,7 @@
 #include "Subsystem.h"
 #include "common/PCH.h"
 
-void SubsystemManager::registerSubsystem(std::unique_ptr<Subsystem> subsystem)
+void SubsystemManager::registerSubsystem(std::unique_ptr<ServerModule> subsystem)
 {
     const std::string &subsystemName = subsystem->name();
 
@@ -22,7 +22,7 @@ void SubsystemManager::registerSubsystem(std::unique_ptr<Subsystem> subsystem)
     throw std::runtime_error("Subsystem with name '" + subsystemName + "' is already registered.");
 }
 
-Subsystem *SubsystemManager::subsystem(const std::string &name)
+ServerModule *SubsystemManager::subsystem(const std::string &name)
 {
     // Ensure thread safety with a lock
     std::lock_guard lock(m_Mutex);
@@ -33,7 +33,7 @@ Subsystem *SubsystemManager::subsystem(const std::string &name)
     throw std::runtime_error("Subsystem with name \"" + name + "\" not found.");
 }
 
-Subsystem *SubsystemManager::operator[](const std::string &name)
+ServerModule *SubsystemManager::operator[](const std::string &name)
 {
     return subsystem(name);
 }

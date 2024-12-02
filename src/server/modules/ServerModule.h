@@ -4,11 +4,10 @@
 
 #pragma once
 #include <string>
-#include "server/Signal.h"
 
-class Subsystem {
+class ServerModule {
 public:
-    virtual ~Subsystem() = default;
+    virtual ~ServerModule() = default;
     virtual int init() = 0;
     [[nodiscard]] virtual constexpr std::string name() const = 0;
 };

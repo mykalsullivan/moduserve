@@ -49,14 +49,14 @@ bool ServerConnection::startListening()
     return false;
 }
 
-Connection *ServerConnection::acceptClient()
+OldConnection *ServerConnection::acceptClient()
 {
     sockaddr_in clientAddress {};
     socklen_t clientAddressLength = sizeof(clientAddress);
     int clientFD = accept(m_FD, reinterpret_cast<sockaddr *>(&clientAddress), &clientAddressLength);
     if (clientFD < 0) return nullptr;
 
-    auto client = new Connection();
+    auto client = new OldConnection();
     client->setSocket(clientFD);
     client->setAddress(clientAddress);
     return client;

@@ -7,8 +7,8 @@
 #include <getopt.h>
 #include <filesystem>
 
-#include "subsystems/connection_subsystem/ConnectionSubsystem.h"
-#include "subsystems/message_subsystem/MessageSubsystem.h"
+#include "modules/connection_module/ConnectionSubsystem.h"
+#include "modules/message_module/MessageSubsystem.h"
 
 void printUsage();
 

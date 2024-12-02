@@ -5,6 +5,7 @@
 #pragma once
 #include <string>
 #include <chrono>
+#include <entt/entt.hpp>
 
 // For Linux support
 #ifndef _WIN32
@@ -13,17 +14,13 @@
 #include <winsock2.h>
 #endif
 
-class Connection {
+class OldConnection {
 public:
-    Connection();
-    virtual ~Connection();
+    OldConnection();
+    virtual ~OldConnection();
 
 protected:
-#ifndef _WIN32
-    int m_FD;
-#else
-    SOCKET m_FD;
-#endif
+    u_long m_FD;
     sockaddr_in m_Address;
     std::chrono::steady_clock::time_point m_LastActivityTime;
 
@@ -31,7 +28,7 @@ public:
     bool createSocket();
     void setSocket(int fd);
     virtual void setAddress(sockaddr_in address);
-    [[nodiscard]] int fd() const { return m_FD; }
+    [[nodiscard]] u_long fd() const { return m_FD; }
     [[nodiscard]] std::string ip() const;
     [[nodiscard]] int port() const;
 
@@ -43,3 +40,35 @@ public:
     [[nodiscard]] bool isInactive(int timeout) const;
     void updateLastActivityTime();
 };
+
+using Connection = entt::entity;
+
+struct SocketComponent {
+    u_long fd;
+    sockaddr_in address;
+};
+
+struct SettingsComponent {
+
+};
+
+struct InfoComponent {
+    std::chrono::steady_clock::time_point lastActivityTime;
+};
+
+struct ServerComponent {};
+
+namespace Blah {
+    bool createSocket(int id);
+    void setSocket(int id);
+    void setAddress(int id, sockaddr_in address);
+    [[nodiscard]] u_long fd(int id);
+    [[nodiscard]] std::string ip(int id);
+    [[nodiscard]] int port(int id);
+    bool sendData(int id, const std::string &data);
+    [[nodiscard]] std::string receiveData(int id);
+    bool hasPendingData(int id);
+    [[nodiscard]] bool isValid(int id);
+    [[nodiscard]] bool isInactive(int id);
+    void updateLastActivityTime(int id);
+}

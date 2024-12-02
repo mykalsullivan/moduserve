@@ -7,7 +7,7 @@
 #include <thread>
 #include <atomic>
 
-class ClientConnection : public Connection {
+class ClientConnection : public OldConnection {
 public:
     ClientConnection() = default;
     ~ClientConnection() override;

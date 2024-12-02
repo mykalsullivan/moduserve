@@ -11,9 +11,9 @@ target_link_libraries(XServer
         Commands
 )
 
-target_link_libraries(XServerCommon PRIVATE
-        ws2_32
-)
+#target_link_libraries(XServerCommon PRIVATE
+#        ws2_32
+#)
 
 include(CheckCXXSourceCompiles)
 
@@ -29,5 +29,5 @@ if(NOT HAVE_STD_MUTEX)
     message(FATAL_ERROR "std::mutex is not supported by the compiler.")
 endif()
 
-add_subdirectory(subsystems)
+add_subdirectory(modules)
 add_subdirectory(commands)

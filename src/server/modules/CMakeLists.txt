@@ -1,5 +1,6 @@
 add_library(Subsystems STATIC
-        SubsystemManager.cpp
+        ServerModuleManager.cpp
+        ServerModule.h
 )
 
 target_link_libraries(Subsystems
@@ -8,5 +9,5 @@ target_link_libraries(Subsystems
         MessageSubsystem
 )
 
-add_subdirectory(connection_subsystem)
-add_subdirectory(message_subsystem)
+add_subdirectory(connection_module)
+add_subdirectory(message_module)

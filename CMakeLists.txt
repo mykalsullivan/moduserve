@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.25)
 project(XServer)
 
 # Comment if using Linux. I will automate this in the future.
-set(CMAKE_CXX_COMPILER /usr/bin/x86_64-w64-mingw32-g++-posix)
+#set(CMAKE_CXX_COMPILER /usr/bin/x86_64-w64-mingw32-g++-posix)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

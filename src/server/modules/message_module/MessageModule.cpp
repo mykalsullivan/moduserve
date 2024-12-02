@@ -20,7 +20,7 @@ int MessageSubsystem::init()
 }
 
 // This will need to do other stuff in the future
-void MessageSubsystem::handleMessage(const Connection &sender, const std::string &message)
+void MessageSubsystem::handleMessage(const OldConnection &sender, const std::string &message)
 {
     // ... do stuff ...
 
@@ -29,7 +29,7 @@ void MessageSubsystem::handleMessage(const Connection &sender, const std::string
 }
 
 // This needs to parse messages and commands properly (commands use '/' delimiter)
-void MessageSubsystem::parseMessage(const Connection &sender, const std::string &message)
+void MessageSubsystem::parseMessage(const OldConnection &sender, const std::string &message)
 {
     if (message[0] == '/')
     {
@@ -50,7 +50,7 @@ void MessageSubsystem::parseMessage(const Connection &sender, const std::string 
     else
     {
         logMessage(LogLevel::Info, + "Client @ " + sender.ip() + ':' + std::to_string(sender.port()) + " sent: \"" + message + '\"');
-        auto signal = GET_SIGNAL("onBroadcast", const Connection &, const std::string &);
+        auto signal = GET_SIGNAL("onBroadcast", const OldConnection &, const std::string &);
         if (signal) signal->emit(sender, message);
     }
 }

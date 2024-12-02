@@ -5,7 +5,7 @@
 #pragma once
 #include "common/Connection.h"
 
-class ServerConnection : public Connection {
+class ServerConnection : public OldConnection {
 public:
     ServerConnection() = default;
     ~ServerConnection() override;
@@ -13,5 +13,5 @@ public:
     bool createAddress(int port);
     bool bindAddress();
     bool startListening();
-    Connection *acceptClient();
+    OldConnection *acceptClient();
 };

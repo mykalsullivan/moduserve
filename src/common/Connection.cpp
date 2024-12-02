@@ -14,14 +14,14 @@
 #include <ws2tcpip.h>
 #endif
 
-Connection::Connection()
+OldConnection::OldConnection()
     : m_FD(-1), m_Address()
 {
     memset(&m_Address, 0, sizeof(m_Address));
     updateLastActivityTime();
 }
 
-Connection::~Connection()
+OldConnection::~OldConnection()
 {
     // I need to find a cross-platform version of this
     //shutdown(m_FD, SHUT_RDWR);
@@ -37,7 +37,7 @@ Connection::~Connection()
     }
 }
 
-bool Connection::createSocket()
+bool OldConnection::createSocket()
 {
     m_FD = socket(AF_INET, SOCK_STREAM, 0);
     if (m_FD >= 0)
@@ -71,27 +71,27 @@ bool Connection::createSocket()
     return false;
 }
 
-void Connection::setSocket(int fd)
+void OldConnection::setSocket(int fd)
 {
     m_FD = fd;
 }
 
-void Connection::setAddress(sockaddr_in address)
+void OldConnection::setAddress(sockaddr_in address)
 {
     m_Address = address;
 }
 
-std::string Connection::ip() const {
+std::string OldConnection::ip() const {
     char ipStr[INET_ADDRSTRLEN];
     inet_ntop(AF_INET, &(m_Address.sin_addr), ipStr, INET_ADDRSTRLEN);
     return std::string(ipStr);
 }
 
-int Connection::port() const {
+int OldConnection::port() const {
     return ntohs(m_Address.sin_port);
 }
 
-bool Connection::sendData(const std::string &data) const
+bool OldConnection::sendData(const std::string &data) const
 {
     if (m_FD != -1 && !data.empty())
     {
@@ -112,7 +112,7 @@ bool Connection::sendData(const std::string &data) const
     return false;
 }
 
-std::string Connection::receiveData()
+std::string OldConnection::receiveData()
 {
     // Check if there is pending data and return if no data is available
     if (!hasPendingData()) return "";
@@ -141,7 +141,7 @@ std::string Connection::receiveData()
     return std::string(buffer, bytesReceived); // Create string from buffer
 }
 
-bool Connection::isValid() const
+bool OldConnection::isValid() const
 {
     // Check if there is pending data and return if no data is available
     if (!hasPendingData()) return true;
@@ -169,14 +169,14 @@ bool Connection::isValid() const
     return true;
 }
 
-bool Connection::isInactive(int timeout) const
+bool OldConnection::isInactive(int timeout) const
 {
     auto currentTime = std::chrono::steady_clock::now();
     return (currentTime - m_LastActivityTime) > std::chrono::seconds(timeout);
 }
 
 
-bool Connection::hasPendingData() const
+bool OldConnection::hasPendingData() const
 {
     if (m_FD == -1) return false;
     fd_set readFDs;
@@ -193,7 +193,7 @@ bool Connection::hasPendingData() const
     return false;
 }
 
-void Connection::updateLastActivityTime()
+void OldConnection::updateLastActivityTime()
 {
     m_LastActivityTime = std::chrono::steady_clock::now();
 }
