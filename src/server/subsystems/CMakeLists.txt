@@ -10,4 +10,3 @@ target_link_libraries(Subsystems
 
 add_subdirectory(connection_subsystem)
 add_subdirectory(message_subsystem)
-add_subdirectory(database_subsystem)
