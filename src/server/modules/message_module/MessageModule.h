@@ -4,6 +4,7 @@
 
 #pragma once
 #include "../ServerModule.h"
+#include "server/Signal.h"
 #include <string>
 
 // Forward declaration(s)

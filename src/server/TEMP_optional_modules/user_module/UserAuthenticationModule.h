@@ -3,21 +3,21 @@
 //
 
 #pragma once
-#include "server/subsystems/Subsystem.h"
+#include "server/modules/ServerModule.h"
 #include <string>
 #include <pqxx/pqxx>
 
-class UserAuthenticationSubsystem : public Subsystem {
+class UserAuthenticationModule : public ServerModule {
 public:
-    UserAuthenticationSubsystem();
-    ~UserAuthenticationSubsystem() override;
+    UserAuthenticationModule();
+    ~UserAuthenticationModule() override;
 
 private:
     pqxx::connection *m_DatabaseConnection;
 
 public:
     int init() override;
-    [[nodiscard]] constexpr std::string name() const override { return "UserAuthenticationSubsystem"; }
+    [[nodiscard]] constexpr std::string name() const override { return "UserAuthenticationModule"; }
 
     bool sync();
     [[nodiscard]] int registerUser(const std::string &username, const std::string &password);

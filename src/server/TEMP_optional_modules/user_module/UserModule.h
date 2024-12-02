@@ -3,18 +3,17 @@
 //
 
 #pragma once
-#include "server/subsystems/Subsystem.h"
+#include "server/modules/ServerModule.h"
 #include <string>
 #include <unordered_map>
-#include <mutex>
 
 // Forward declaration(s)
 class User;
 
-class UserSubsystem : public Subsystem {
+class UserModule : public ServerModule {
 public:
-    UserSubsystem() = default;
-    ~UserSubsystem() override;
+    UserModule() = default;
+    ~UserModule() override;
 
 private:
     std::unordered_map<int, User *> m_Users;

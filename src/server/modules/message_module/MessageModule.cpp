@@ -2,25 +2,24 @@
 // Created by msullivan on 11/10/24.
 //
 
-#include "MessageSubsystem.h"
+#include "MessageModule.h"
 #include "common/PCH.h"
 #include "common/Connection.h"
 #include "server/Server.h"
 #include "server/commands/Command.h"
-#include "server/Signal.h"
 
-int MessageSubsystem::init()
+int MessageModule::init()
 {
     // Register signals with the SignalManager
     REGISTER_SIGNAL("onReceive", onReceive);
 
     // Connect the signal to slot
-    connectSignal(onReceive, &MessageSubsystem::handleMessage);
+    connectSignal(onReceive, &MessageModule::handleMessage);
     return 0;
 }
 
 // This will need to do other stuff in the future
-void MessageSubsystem::handleMessage(const OldConnection &sender, const std::string &message)
+void MessageModule::handleMessage(const OldConnection &sender, const std::string &message)
 {
     // ... do stuff ...
 
@@ -29,7 +28,7 @@ void MessageSubsystem::handleMessage(const OldConnection &sender, const std::str
 }
 
 // This needs to parse messages and commands properly (commands use '/' delimiter)
-void MessageSubsystem::parseMessage(const OldConnection &sender, const std::string &message)
+void MessageModule::parseMessage(const OldConnection &sender, const std::string &message)
 {
     if (message[0] == '/')
     {

@@ -1,6 +1,7 @@
 add_library(Subsystems STATIC
         ServerModuleManager.cpp
         ServerModule.h
+        ../TEMP_optional_modules/user_module/UserModule.h
 )
 
 target_link_libraries(Subsystems

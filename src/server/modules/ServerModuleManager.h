@@ -9,10 +9,10 @@
 #include <mutex>
 
 // Forward declaration(s)
-class Subsystem;
+class ServerModule;
 
-class SubsystemManager {
-    std::unordered_map<std::string, std::unique_ptr<Subsystem>> m_Subsystems;
+class ServerModuleManager {
+    std::unordered_map<std::string, std::unique_ptr<ServerModule>> m_Subsystems;
     std::mutex m_Mutex;
 
 public:
@@ -22,7 +22,7 @@ public:
     [[nodiscard]] bool contains(const std::string &name) const { return m_Subsystems.contains(name); }
     [[nodiscard]] size_t size() const { return m_Subsystems.size(); }
     
-    void registerSubsystem(std::unique_ptr<Subsystem> subsystem);
-    Subsystem *subsystem(const std::string &name);
-    Subsystem *operator[](const std::string &name);
+    void registerModule(std::unique_ptr<ServerModule> module);
+    ServerModule *module(const std::string &name);
+    ServerModule *operator[](const std::string &name);
 };

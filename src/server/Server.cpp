@@ -7,8 +7,9 @@
 #include <getopt.h>
 #include <filesystem>
 
-#include "modules/connection_module/ConnectionSubsystem.h"
-#include "modules/message_module/MessageSubsystem.h"
+#include "modules/connection_module/ConnectionModule.h"
+#include "modules/connection_module/ConnectionModule.h"
+#include "modules/message_module/MessageModule.h"
 
 void printUsage();
 
@@ -77,8 +78,8 @@ int Server::init(int argc, char **argv)
         }
 
     // 8. Register built-in subsystems
-    m_SubsystemManager.registerSubsystem(std::make_unique<ConnectionSubsystem>());
-    m_SubsystemManager.registerSubsystem(std::make_unique<MessageSubsystem>());
+    m_SubsystemManager.registerSubsystem(std::make_unique<ConnectionModule>());
+    m_SubsystemManager.registerSubsystem(std::make_unique<MessageModule>());
 
     // 9. Initialize subsystems
     for (auto &ss : m_SubsystemManager)

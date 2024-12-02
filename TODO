@@ -19,3 +19,4 @@
     - Decouples information from functionality
     - We would no longer need a derived ServerConnection class
     - Allows subsystems to add states to Connections (i.e. user information for each connection)
+- registerSubsystem() and registerCommand() need to take a command class as a template argument instead of taking a pointer directly

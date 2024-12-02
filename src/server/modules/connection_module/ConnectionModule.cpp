@@ -5,7 +5,6 @@
 #include "ConnectionModule.h"
 #include "ConnectionManager.h"
 #include "server/Server.h"
-#include "ServerConnection.h"
 #include "common/Logger.h"
 #include "common/Message.h"
 #include <barrier>
