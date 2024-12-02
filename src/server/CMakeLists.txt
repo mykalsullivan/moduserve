@@ -8,6 +8,7 @@ add_executable(XServer
 target_link_libraries(XServer
         XServerCommon
         Subsystems
+        Commands
 )
 
 add_subdirectory(subsystems)
