@@ -33,14 +33,12 @@ bool ClientConnection::createAddress(const std::string& ip, int port)
 
 int ClientConnection::connectToServer()
 {
-    logMessage(LogLevel::DEBUG, "Attempting to connectSignal to server at " + ip() + ':' + std::to_string(port()));
-
-    // Attempt to connectSignal
+    // Attempt to connect
     int connectionResult = connect(m_FD, reinterpret_cast<sockaddr *>(&m_Address), sizeof(m_Address));
 
     // Immediately return if successful
     if (connectionResult == 0) {
-        logMessage(LogLevel::DEBUG, "Connection successful");
+        logMessage(LogLevel::INFO, "Connection successful");
         return 1;
     }
 
@@ -102,7 +100,7 @@ int ClientConnection::connectToServer()
             return 1;
         }
     }
-    logMessage(LogLevel::ERROR, "Failed to connectSignal to server: error " + std::to_string(errno));
+    logMessage(LogLevel::ERROR, "Failed to connect to server: error " + std::to_string(errno));
     return -1;
 }
 
