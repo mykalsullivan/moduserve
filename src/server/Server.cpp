@@ -4,6 +4,7 @@
 
 #include "Server.h"
 #include "common/PCH.h"
+#include <getopt.h>
 #include <filesystem>
 
 #include "subsystems/connection_subsystem/ConnectionSubsystem.h"
@@ -22,7 +23,7 @@ Server &Server::instance()
 
 int Server::run(int argc, char **argv)
 {
-    logMessage(LogLevel::INFO, "Starting XServer...");
+    logMessage(LogLevel::Info, "Starting XServer...");
 
     int initResult = init(argc, argv);
     if (initResult != 0) return initResult;
@@ -41,7 +42,7 @@ void Server::stop()
 {
     m_Running = false;
     m_CV.notify_one();
-    logMessage(LogLevel::INFO, "Server shutting down...");
+    logMessage(LogLevel::Info, "Server shutting down...");
 }
 
 int Server::init(int argc, char **argv)
@@ -50,11 +51,11 @@ int Server::init(int argc, char **argv)
     try
     {
         m_WorkingDirectory = std::filesystem::current_path().string();
-        logMessage(LogLevel::INFO, "Current working directory: " + m_WorkingDirectory);
+        logMessage(LogLevel::Info, "Current working directory: " + m_WorkingDirectory);
     }
     catch (const std::filesystem::filesystem_error &e)
     {
-        logMessage(LogLevel::ERROR, "Failed to retrieve working directory");
+        logMessage(LogLevel::Error, "Failed to retrieve working directory");
         exit(EXIT_FAILURE);
     }
 
@@ -84,10 +85,10 @@ int Server::init(int argc, char **argv)
     {
         int result = ss.second->init();
         if (result == 0)
-            logMessage(LogLevel::INFO, "Subsystem \"" + ss.second->name() + "\" initialized");
+            logMessage(LogLevel::Info, "Subsystem \"" + ss.second->name() + "\" initialized");
         else
         {
-            logMessage(LogLevel::ERROR, "Subsystem \"" + ss.second->name() + "\" failed to initialize");
+            logMessage(LogLevel::Error, "Subsystem \"" + ss.second->name() + "\" failed to initialize");
             return 1;
         }
     }

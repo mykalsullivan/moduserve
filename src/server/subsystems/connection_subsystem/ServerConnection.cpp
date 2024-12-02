@@ -4,15 +4,26 @@
 
 #include "ServerConnection.h"
 #include "common/PCH.h"
+
+#ifndef _WIN32
+#include <unistd.h>
 #include <arpa/inet.h>
+#else
+#include <ws2tcpip.h>
+#endif
 
 ServerConnection::~ServerConnection()
 {
-    shutdown(m_FD, SHUT_RDWR);
+    // Needs a cross-platform version
+    //shutdown(m_FD, SHUT_RDWR);
 
     if (m_FD != -1)
     {
+#ifndef _WIN32
         close(m_FD);
+#else
+        closesocket(m_FD);
+#endif
         m_FD = -1;
     }
 }

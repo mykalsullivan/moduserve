@@ -20,10 +20,10 @@ std::string logLevelToString(LogLevel level)
 {
     switch (level)
     {
-        case LogLevel::DEBUG: return "DEBUG";
-        case LogLevel::INFO: return "INFO";
-        case LogLevel::WARNING: return "WARNING";
-        case LogLevel::ERROR: return "ERROR";
+        case LogLevel::Debug: return "DEBUG";
+        case LogLevel::Info: return "INFO";
+        case LogLevel::Warning: return "WARNING";
+        case LogLevel::Error: return "ERROR";
         default: return "UNKNOWN";
     }
 }
@@ -35,16 +35,16 @@ void logMessage(LogLevel level, const std::string &message)
 
     std::string colorCode;
     switch (level) {
-        case LogLevel::DEBUG:
+        case LogLevel::Debug:
             colorCode = "\033[36m"; // Cyan
         break;
-        case LogLevel::INFO:
+        case LogLevel::Info:
             colorCode = "\033[37m"; // White (default)
         break;
-        case LogLevel::WARNING:
+        case LogLevel::Warning:
             colorCode = "\033[33m"; // Yellow
         break;
-        case LogLevel::ERROR:
+        case LogLevel::Error:
             colorCode = "\033[31m"; // Red
         break;
         default:

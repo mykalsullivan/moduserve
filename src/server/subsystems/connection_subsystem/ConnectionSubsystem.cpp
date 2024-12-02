@@ -9,6 +9,11 @@
 #include "common/Logger.h"
 #include "common/Message.h"
 #include <barrier>
+#include <mutex>
+
+#ifdef WIN32
+#include <winsock2.h>
+#endif
 
 static ConnectionManager connectionManager;
 
@@ -24,11 +29,21 @@ ConnectionSubsystem::~ConnectionSubsystem()
     // Join the acceptor loop
     if (m_AcceptorThread.joinable()) m_AcceptorThread.join();
 
-    logMessage(LogLevel::INFO, "(ConnectionSubsystem) Stopped");
+#ifdef WIN32
+    WSACleanup();
+#endif
+    logMessage(LogLevel::Info, "(ConnectionSubsystem) Stopped");
 }
 
 int ConnectionSubsystem::init()
 {
+#ifdef WIN32
+    // Start Winsock
+    WSAData wsaData {};
+    if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
+        logMessage(LogLevel::Fatal, "WSAStartup failed");
+#endif
+
     // Connect the signals to slots
     connectSignal(onConnect, &ConnectionSubsystem::onConnectFunction);
     connectSignal(onDisconnect, &ConnectionSubsystem::onDisconnectFunction);
@@ -44,7 +59,7 @@ int ConnectionSubsystem::init()
         // Wait for all threads to be created
         m_ThreadBarrier.arrive_and_wait();
 
-        logMessage(LogLevel::DEBUG, "(ConnectionSubsystem) Started acceptor thread");
+        logMessage(LogLevel::Debug, "(ConnectionSubsystem) Started acceptor thread");
         while (server.isRunning())
         {
             if (auto client = reinterpret_cast<ServerConnection *>(connectionManager[connectionManager.serverFD()])->acceptClient())
@@ -59,13 +74,13 @@ int ConnectionSubsystem::init()
                 }
                 else
                 {
-                    logMessage(LogLevel::ERROR, "Failed to add client connection");
+                    logMessage(LogLevel::Error, "Failed to add client connection");
                     delete client;
                 }
             }
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
-        logMessage(LogLevel::DEBUG, "(ConnectionSubsystem) Stopped acceptor thread");
+        logMessage(LogLevel::Debug, "(ConnectionSubsystem) Stopped acceptor thread");
     });
 
     // Define and start event thread
@@ -73,7 +88,7 @@ int ConnectionSubsystem::init()
         // Wait for all threads to be created
         m_ThreadBarrier.arrive_and_wait();
 
-        logMessage(LogLevel::DEBUG, "(ConnectionSubsystem) Started event thread");
+        logMessage(LogLevel::Debug, "(ConnectionSubsystem) Started event thread");
         while (server.isRunning())
         {
             std::unique_lock lock(m_ThreadMutex);
@@ -87,10 +102,10 @@ int ConnectionSubsystem::init()
             processConnections();
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
-        logMessage(LogLevel::DEBUG, "(ConnectionSubsystem) Stopped event thread");
+        logMessage(LogLevel::Debug, "(ConnectionSubsystem) Stopped event thread");
     });
 
-    logMessage(LogLevel::INFO, "(ConnectionSubsystem) Started");
+    logMessage(LogLevel::Info, "(ConnectionSubsystem) Started");
     return 0;
 }
 
@@ -155,12 +170,12 @@ void ConnectionSubsystem::processConnections()
 
 void ConnectionSubsystem::onConnectFunction(const Connection &connection)
 {
-    logMessage(LogLevel::INFO, "Client @ " + connection.ip() + ':' + std::to_string(connection.port()) + " connected");
+    logMessage(LogLevel::Info, "Client @ " + connection.ip() + ':' + std::to_string(connection.port()) + " connected");
 }
 
 void ConnectionSubsystem::onDisconnectFunction(const Connection &connection)
 {
-    logMessage(LogLevel::INFO, "Client @ " + connection.ip() + ':' + std::to_string(connection.port()) + " disconnected");
+    logMessage(LogLevel::Info, "Client @ " + connection.ip() + ':' + std::to_string(connection.port()) + " disconnected");
 }
 
 void ConnectionSubsystem::broadcastMessage(const Connection &sender, const std::string &data)
@@ -169,18 +184,18 @@ void ConnectionSubsystem::broadcastMessage(const Connection &sender, const std::
     for (auto &[fd, connection] : connectionManager)
     {
         // Skip server and sender
-        if (fd == connectionManager.serverFD() || fd == sender.getFD() || !connection) continue;
+        if (fd == connectionManager.serverFD() || fd == sender.fd() || !connection) continue;
 
         Message message(sender.ip(), sender.port(), data);
 
         // Attempt to send data
         if (connection->sendData(message.toString()))
-            logMessage(LogLevel::DEBUG,
+            logMessage(LogLevel::Debug,
                        "Sent message to client @ " +
                                connection->ip() + ':' +
                        std::to_string(connection->port()));
         else
-            logMessage(LogLevel::ERROR,
+            logMessage(LogLevel::Error,
                        "Failed to send message to client @ " +
                                connection->ip() + ':' +
                        std::to_string(connection->port()));

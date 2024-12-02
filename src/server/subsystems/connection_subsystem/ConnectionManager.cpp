@@ -19,43 +19,43 @@ ConnectionManager::ConnectionManager()
     // 2. Create socket
     if (!serverConnection->createSocket())
     {
-        logMessage(LogLevel::ERROR, "Failed to create socket");
+        logMessage(LogLevel::Error, "Failed to create socket");
         delete serverConnection;
         exit(EXIT_FAILURE);
     }
-    logMessage(LogLevel::DEBUG, "Created server socket: " + std::to_string(serverConnection->getFD()));
+    logMessage(LogLevel::Debug, "Created server socket: " + std::to_string(serverConnection->fd()));
 
     // 3. Create server address
     if (!serverConnection->createAddress(port))
     {
-        logMessage(LogLevel::ERROR, "Failed to create address");
+        logMessage(LogLevel::Error, "Failed to create address");
         delete serverConnection;
         exit(EXIT_FAILURE);
     }
-    logMessage(LogLevel::DEBUG, "Successfully created server address (listening on all interfaces)");
+    logMessage(LogLevel::Debug, "Successfully created server address (listening on all interfaces)");
 
     // 4. Bind socket to address
     if (!serverConnection->bindAddress())
     {
-        logMessage(LogLevel::ERROR, "Failed to bind address");
+        logMessage(LogLevel::Error, "Failed to bind address");
         delete serverConnection;
         exit(EXIT_FAILURE);
     }
-    logMessage(LogLevel::DEBUG, "Successfully bound to address (" + serverConnection->ip() + ':' + std::to_string(
+    logMessage(LogLevel::Debug, "Successfully bound to address (" + serverConnection->ip() + ':' + std::to_string(
             serverConnection->port()) + ')');
 
     // 5. Listen to incoming connections
     if (!serverConnection->startListening())
     {
-        logMessage(LogLevel::ERROR, "Cannot listen to incoming connections");
+        logMessage(LogLevel::Error, "Cannot listen to incoming connections");
         delete serverConnection;
         exit(EXIT_FAILURE);
     }
-    logMessage(LogLevel::INFO, "Listening for new connections on " + serverConnection->ip() + ':' +
+    logMessage(LogLevel::Info, "Listening for new connections on " + serverConnection->ip() + ':' +
                                std::to_string(serverConnection->port()) + ')');
 
     add(*serverConnection);
-    m_ServerFD = serverConnection->getFD();
+    m_ServerFD = serverConnection->fd();
 }
 
 ConnectionManager::~ConnectionManager()
@@ -85,7 +85,7 @@ bool ConnectionManager::add(Connection &connection)
 {
     std::lock_guard lock(m_Mutex);
 
-    int socketID = connection.getFD();
+    int socketID = connection.fd();
     if (!m_Connections.contains(socketID))
     {
         m_Connections[socketID] = &connection;
@@ -93,7 +93,7 @@ bool ConnectionManager::add(Connection &connection)
         if (signal) signal->emit(connection);
         return true;
     }
-    logMessage(LogLevel::ERROR, "Attempting to add an existing connection");
+    logMessage(LogLevel::Error, "Attempting to add an existing connection");
     return false;
 }
 
@@ -111,7 +111,7 @@ bool ConnectionManager::remove(int socketFD)
         m_Connections.erase(it);
         return true;
     }
-    logMessage(LogLevel::ERROR, "Attempting to remove non-existent socket: " + std::to_string(socketFD));
+    logMessage(LogLevel::Error, "Attempting to remove non-existent socket: " + std::to_string(socketFD));
     return false;
 }
 

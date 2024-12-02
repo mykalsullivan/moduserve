@@ -4,8 +4,15 @@
 
 #include "ClientConnection.h"
 #include "common/PCH.h"
+
+#ifndef _WIN32
 #include <arpa/inet.h>
 #include <poll.h>
+#else
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#endif
+
 
 ClientConnection::~ClientConnection()
 {
@@ -25,7 +32,7 @@ bool ClientConnection::createAddress(const std::string& ip, int port)
 
     // Convert IP address from string to socket address
     if (inet_pton(AF_INET, ip.c_str(), &m_Address.sin_addr) <= 0) {
-        logMessage(LogLevel::ERROR, "Failed to convert IP address from string");
+        logMessage(LogLevel::Error, "Failed to convert IP address from string");
         return false;
     }
     return true;
@@ -38,7 +45,7 @@ int ClientConnection::connectToServer()
 
     // Immediately return if successful
     if (connectionResult == 0) {
-        logMessage(LogLevel::INFO, "Connection successful");
+        logMessage(LogLevel::Info, "Connection successful");
         return 1;
     }
 
@@ -48,20 +55,20 @@ int ClientConnection::connectToServer()
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
             // No pending connections, can retry after a short delay or poll
             std::cout << "No incoming connections right now\n";
-            logMessage(LogLevel::ERROR, "No incoming connections right now");
+            logMessage(LogLevel::Error, "No incoming connections right now");
             return -1;
         }
         else if (errno == EINTR) {
             // Interrupted by signal, retry
-            logMessage(LogLevel::ERROR, "Interrupted by a signal");
+            logMessage(LogLevel::Error, "Interrupted by a signal");
             return -1;
         }
         else if (errno == ECONNREFUSED) {
-            logMessage(LogLevel::ERROR, "Connection refused");
+            logMessage(LogLevel::Error, "Connection refused");
             return -1;
         }
         else if (errno == ECONNABORTED) {
-            logMessage(LogLevel::ERROR, "Connection aborted");
+            logMessage(LogLevel::Error, "Connection aborted");
             return -1;
         }
     }
@@ -74,10 +81,10 @@ int ClientConnection::connectToServer()
         pfd.revents = 0;
 
         int result = poll(&pfd, 1, 15000); // 30-second timeout
-        logMessage(LogLevel::DEBUG, "Poll result: " + std::to_string(result));
+        logMessage(LogLevel::Debug, "Poll result: " + std::to_string(result));
 
         if (result <= 0) {
-            logMessage(LogLevel::ERROR, "Connection timed out or poll failed");
+            logMessage(LogLevel::Error, "Connection timed out or poll failed");
             return 0;
         }
 
@@ -87,13 +94,13 @@ int ClientConnection::connectToServer()
             int socketError = 0;
             socklen_t len = sizeof(socketError);
             if (getsockopt(m_FD, SOL_SOCKET, SO_ERROR, &socketError, &len) == -1) {
-                logMessage(LogLevel::ERROR, "Failed to check socket error after poll");
+                logMessage(LogLevel::Error, "Failed to check socket error after poll");
                 return -2;
             }
 
             // Connection failed for another reason
             if (socketError != 0) {
-                logMessage(LogLevel::ERROR, "Connection failed: " + socketError);
+                logMessage(LogLevel::Error, "Connection failed: " + socketError);
 
                 return -3;
             }
@@ -107,7 +114,7 @@ int ClientConnection::connectToServer()
 void ClientConnection::closeConnection()
 {
     if (m_FD != -1) {
-        logMessage(LogLevel::INFO, "Closing connection to " + ip() + ':' + std::to_string(port()));
+        logMessage(LogLevel::Info, "Closing connection to " + ip() + ':' + std::to_string(port()));
 
         close(m_FD);
         m_FD = -1;
@@ -147,16 +154,16 @@ void ClientConnection::startMessagePollingThread() {
             int result = poll(&pfd, 1, 1000);  // Poll for 1 second
 
             if (result == -1) {
-                logMessage(LogLevel::ERROR, "Poll failed: " + std::string(strerror(errno)));
+                logMessage(LogLevel::Error, "Poll failed: " + std::string(strerror(errno)));
                 return;
             }
 
             if (pfd.revents & POLLIN) {
                 std::string message = receiveMessage();
-                logMessage(LogLevel::INFO, "\aReceived: \"" + message + '\"');
+                logMessage(LogLevel::Info, "\aReceived: \"" + message + '\"');
                 if (message.empty())
                 {
-                    logMessage(LogLevel::INFO,
+                    logMessage(LogLevel::Info,
                                "Client (" + ip() + ':' + std::to_string(port()) + ")'s connection reset (disconnected)");
                     closeConnection();
                 }
@@ -177,7 +184,7 @@ void ClientConnection::startKeepaliveThread()
 {
     m_KeepaliveRunning = true;
     m_KeepaliveThread = std::thread([this] {
-        logMessage(LogLevel::DEBUG, "Started keepalive thread");
+        logMessage(LogLevel::Debug, "Started keepalive thread");
         while (m_KeepaliveRunning)
         {
             if (m_FD != -1) {
@@ -198,5 +205,5 @@ void ClientConnection::stopKeepaliveThread()
     if (m_KeepaliveThread.joinable()) {
         m_KeepaliveThread.join();  // Wait for the thread to finish before cleaning up
     }
-    logMessage(LogLevel::DEBUG, "Stopped keepalive thread");
+    logMessage(LogLevel::Debug, "Stopped keepalive thread");
 }

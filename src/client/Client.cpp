@@ -128,7 +128,7 @@ void Client::stop()
 
 bool Client::connectToServer(const std::string &ip, int port, int timeout)
 {
-    logMessage(LogLevel::INFO, "Attempting to connect to server @ " + ip + ':' + std::to_string(port));
+    logMessage(LogLevel::Info, "Attempting to connect to server @ " + ip + ':' + std::to_string(port));
 
     // 1. Create connection
     m_Connection = new ClientConnection();

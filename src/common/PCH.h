@@ -19,7 +19,6 @@
 #include <chrono>
 #include <condition_variable>
 #include <mutex>
-#include <unistd.h>
 
 // Custom stuff
 #include "Logger.h"

@@ -11,5 +11,19 @@ target_link_libraries(XServer
         Commands
 )
 
+include(CheckCXXSourceCompiles)
+
+check_cxx_source_compiles("
+    #include <mutex>
+    int main() {
+        std::mutex m;
+        return 0;
+    }
+" HAVE_STD_MUTEX)
+
+if(NOT HAVE_STD_MUTEX)
+    message(FATAL_ERROR "std::mutex is not supported by the compiler.")
+endif()
+
 add_subdirectory(subsystems)
 add_subdirectory(commands)

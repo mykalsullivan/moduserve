@@ -5,8 +5,13 @@
 #include "CommandManager.h"
 #include "server/commands/CommandRegistry.h"
 #include "common/Logger.h"
-#include <dlfcn.h>
 #include <stdexcept>
+
+#ifndef _WIN32
+#include <dlfcn.h>
+#else
+
+#endif
 
 #include "server/commands/stop_command/StopCommand.h"
 #include "server/commands/help_command/HelpCommand.h"

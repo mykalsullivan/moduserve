@@ -44,12 +44,12 @@ void MessageSubsystem::parseMessage(const Connection &sender, const std::string 
     }
     else if (message == "KEEPALIVE")
     {
-        logMessage(LogLevel::DEBUG, "Received keepalive from client @ " + sender.ip() + ':' + std::to_string(
+        logMessage(LogLevel::Debug, "Received keepalive from client @ " + sender.ip() + ':' + std::to_string(
                 sender.port()));
     }
     else
     {
-        logMessage(LogLevel::INFO, + "Client @ " + sender.ip() + ':' + std::to_string(sender.port()) + " sent: \"" + message + '\"');
+        logMessage(LogLevel::Info, + "Client @ " + sender.ip() + ':' + std::to_string(sender.port()) + " sent: \"" + message + '\"');
         auto signal = GET_SIGNAL("onBroadcast", const Connection &, const std::string &);
         if (signal) signal->emit(sender, message);
     }

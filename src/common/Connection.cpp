@@ -5,7 +5,14 @@
 #include "Connection.h"
 #include "PCH.h"
 #include <fcntl.h>
+
+#ifndef WIN32
 #include <arpa/inet.h>
+#include <unistd.h>
+#include <cstring>
+#else
+#include <ws2tcpip.h>
+#endif
 
 Connection::Connection()
     : m_FD(-1), m_Address()
@@ -16,11 +23,16 @@ Connection::Connection()
 
 Connection::~Connection()
 {
-    shutdown(m_FD, SHUT_RDWR);
+    // I need to find a cross-platform version of this
+    //shutdown(m_FD, SHUT_RDWR);
 
     if (m_FD != -1)
     {
+#ifndef WIN32
         close(m_FD);
+#else
+        closesocket(m_FD);
+#endif
         m_FD = -1;
     }
 }
@@ -31,25 +43,31 @@ bool Connection::createSocket()
     if (m_FD >= 0)
     {
         // Set to non-blocking mode, then return true if that works
+#ifdef WIN32
+        u_long mode = 1; // 1 = non-blocking
+        if (ioctlsocket(m_FD, FIONBIO, &mode) != 0)
+        {
+            logMessage(LogLevel::Error, "Failed to to set socket to non-blocking mode");
+            return false;
+        }
+#else
         int flags = fcntl(m_FD, F_GETFL, 0);
-        if (flags == -1)
+        if (flags == -1 || fcntl(m_FD, F_SETFL, flags | O_NONBLOCK) == -1)
         {
-            logMessage(LogLevel::ERROR, "Failed to get socket flags");
+            logMessage(LogLevel::Error, "Failed to to set socket to non-blocking mode");
             return false;
         }
-        if (fcntl(m_FD, F_SETFL, flags | O_NONBLOCK) == -1)
-        {
-            logMessage(LogLevel::ERROR, "Failed to to set socket to non-blocking mode");
-            return false;
-        }
-
-        // Enable keepalive (may remove in the future, I dunno)
+#endif
+        // Enable keepalive
         int enableKeepalive = 1;
-        setsockopt(m_FD, SOL_SOCKET, SO_KEEPALIVE, &enableKeepalive, sizeof(enableKeepalive));
-
+        setsockopt(m_FD, SOL_SOCKET, SO_KEEPALIVE, reinterpret_cast<char *>(&enableKeepalive), sizeof(enableKeepalive));
         return true;
     }
-    logMessage(LogLevel::ERROR, m_FD + ": Socket creation failed");
+#ifdef WIN32
+    logMessage(LogLevel::Fatal, "Socket creation failed: " + std::to_string(WSAGetLastError()));
+#else
+    logMessage(LogLevel::Fatal, "Socket creation failed: " + std::string(strerror(errno)));
+#endif
     return false;
 }
 
@@ -81,13 +99,16 @@ bool Connection::sendData(const std::string &data) const
 
         if (bytesSent == -1)
         {
-            logMessage(LogLevel::ERROR, "Error sending data: \"" + std::string(strerror(errno)) + '\"');
+#ifdef WIN32
+            logMessage(LogLevel::Error, "Error sending data: \"" + std::to_string(WSAGetLastError()) + '\"');
+#else
+            logMessage(LogLevel::Error, "Error sending data: \"" + std::string(strerror(errno)) + '\"');
+#endif
             return false;
         }
-        //logMessage(LogLevel::DEBUG, "Sent message: \"" + data + '\"');
         return true;
     }
-    logMessage(LogLevel::DEBUG, "Attempted to send an empty data");
+    logMessage(LogLevel::Debug, "Attempted to send an empty data");
     return false;
 }
 
@@ -102,10 +123,17 @@ std::string Connection::receiveData()
     // Handle errors
     if (bytesReceived <= 0)
     {
+#ifdef WIN32
         if (bytesReceived == 0)
-            logMessage(LogLevel::INFO, "Connection closed by peer");
+            logMessage(LogLevel::Info, "Connection closed by peer");
         else
-            logMessage(LogLevel::ERROR, "Error receiving data on connection");
+            logMessage(LogLevel::Error, "Error receiving data: \"" + std::to_string(WSAGetLastError()) + '\"');
+#else
+        if (bytesReceived == 0)
+            logMessage(LogLevel::Info, "Connection closed by peer");
+        else
+            logMessage(LogLevel::Error, "Error receiving data: \"" + std::string(strerror(errno)) + '\"');
+#endif
         return "";
     }
 
@@ -124,7 +152,11 @@ bool Connection::isValid() const
     if (result < 0)
     {
         // If errno is EAGAIN or EWOULDBLOCK, it's just a non-blocking operation
+#ifdef WIN32
+        if (WSAGetLastError() == WSAEWOULDBLOCK)
+#else
         if (errno == EAGAIN || errno == EWOULDBLOCK)
+#endif
         {
             //logMessage(LogLevel::DEBUG, "Non-blocking operation");
             return true;
