@@ -34,55 +34,41 @@ public:
 
     // Connect a slot to a signal
     template <typename Signal, typename Slot>
-    static void connect(Signal signal, Slot&& slot)
+    static void connect(Signal &&signal, Slot &&slot)
     {
         std::lock_guard lock(m_Mutex);
         const auto key = std::type_index(typeid(signal));
 
-        // Use std::bind to bind the member function with an instance of the class
-        auto boundSlot = std::bind(std::forward<Slot>(slot), std::placeholders::_1);
+        // Ensure the signal is registered
+        if (!m_Connections.contains(key))
+            registerSignal(signal);
 
-        // Add the bound member function as a slot
-        m_Connections[key].emplace_back([boundSlot]() {
-            boundSlot(nullptr);  // Call the bound member function
+        // Store the slot as a lambda
+        m_Connections[key].emplace_back([slot = std::forward<Slot>(slot)](auto &&... args) mutable {
+            std::invoke(slot, std::forward<decltype(args)>(args)...);  // Invoke function
         });
     }
 
     // Connect a slot to a signal
-    template <typename Class, typename Signal, typename Slot>
-    static void connect(Signal Class::*signal, Slot&& slot)
+    template <typename Class, typename Func, typename Obj>
+    static void connect(Func Class::*signal, Obj &&obj, Func &&slot)
     {
         std::lock_guard lock(m_Mutex);
-        auto key = std::type_index(typeid(signal));
+        const auto key = std::type_index(typeid(signal));
 
-        // Ensure signal is registered before connecting
+        // Ensure the signal is registered
         if (!m_Connections.contains(key))
-            registerSignal(signal); // Register signal if not already registered
+            registerSignal(signal);
 
-        // If the function is static, don't require the object instance.
-        if constexpr (std::is_member_function_pointer_v<Slot>)
-        {
-            // Use std::bind for non-static functions (bind with the object)
-            auto boundSlot = std::bind(std::forward<Slot>(slot), std::placeholders::_1);
-
-            // Add the bound member function as a slot
-            m_Connections[key].emplace_back([boundSlot]() {
-                boundSlot(nullptr);  // Call the bound member function
-            });
-        }
-        else
-        {
-            // Directly use static member function without binding
-            auto boundSlot = std::forward<Slot>(slot);
-            m_Connections[key].emplace_back([boundSlot]() {
-                boundSlot(); // Call the static member function directly
-            });
-        }
+        // Handle static functions or callable objects
+        m_Connections[key].emplace_back([obj = std::forward<Obj>(obj), slot](auto &&...args) mutable {
+            std::invoke(slot, obj, std::forward<decltype(args)>(args)...);  // Deferred invocation
+        });
     }
 
     // Disconnect a specific slot from a signal (function)
     template <typename Signal, typename Slot>
-    static void disconnect(Signal signal, Slot&& slot)
+    static void disconnect(Signal signal, Slot &&slot)
     {
         std::lock_guard lock(m_Mutex);
         const auto key = std::type_index(typeid(signal));
@@ -135,14 +121,11 @@ public:
 
         const auto it = m_Connections.find(key);
         if (it != m_Connections.end())
-        {
             // Return a callable that invokes all connected slots
             return [slots = &it->second] {
                 for (auto &slot : *slots)
                     slot(); // Invoke each slot
             };
-        }
-
         return {}; // Return an empty callable if signal is not found
     }
 
@@ -155,18 +138,44 @@ public:
 
         const auto it = m_Connections.find(key);
         if (it != m_Connections.end())
-        {
             // Return a callable that invokes all connected slots
             return [slots = &it->second]() {
                 for (auto &slot : *slots)
                     slot(); // Invoke each slot
             };
-        }
         return {}; // Return an empty callable if signal is not found
     }
+
+    // Emit a signal to invoke all connected slots
+    template<typename Signal, typename... Args>
+    static void emit(Signal &&signal, Args &&...args) {
+        std::lock_guard lock(m_Mutex);
+        const auto key = std::type_index(typeid(signal));
+
+        const auto it = m_Connections.find(key);
+        if (it != m_Connections.end())
+            for (const auto& slot : it->second)
+                slot(std::forward<Args>(args)...);  // Invoke each connected slot
+    }
+
+    // Emit a class signal to invoke all connected slots
+    template<typename Class, typename Signal, typename... Args>
+    static void emit(Signal Class::*signal, Args&&... args)
+    {
+        std::lock_guard lock(m_Mutex);
+        const auto key = std::type_index(typeid(signal));
+
+        const auto it = m_Connections.find(key);
+        if (it != m_Connections.end())
+            for (const auto& slot : it->second)
+                slot(std::forward<Args>(args)...);  // Invoke each connected slot
+    }
 };
+
+// Static members
+std::mutex ServerSignal::m_Mutex;
+std::unordered_map<std::type_index, std::vector<std::function<void()>>> ServerSignal::m_Connections;
 
 // Macros
 #define signals
 #define slots
-#define emit

@@ -1,6 +1,6 @@
 add_library(ConnectionModule STATIC
-        ConnectionEngine.cpp
-        ConnectionEngine.h
+        NetworkEngine.cpp
+        NetworkEngine.h
 )
 
 target_link_libraries(ConnectionModule

@@ -7,8 +7,8 @@
 #include <getopt.h>
 #include <filesystem>
 
-#include "modules/networkengine/ConnectionEngine.h"
-#include "modules/networkengine/ConnectionEngine.h"
+#include "modules/networkengine/NetworkEngine.h"
+#include "modules/networkengine/NetworkEngine.h"
 #include "modules/messageprocessor/MessageProcessor.h"
 
 void printUsage();
