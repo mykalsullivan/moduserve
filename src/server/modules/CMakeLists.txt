@@ -10,5 +10,5 @@ target_link_libraries(ServerModules
         MessageModule
 )
 
-add_subdirectory(connection_module)
-add_subdirectory(message_module)
+add_subdirectory(networkengine)
+add_subdirectory(messageprocessor)

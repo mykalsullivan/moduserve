@@ -3,9 +3,9 @@
 //
 
 #pragma once
-#include "SignalManager.h"
 #include "modules/ServerModuleManager.h"
 #include "commands/CommandManager.h"
+#include "ServerSignals.h"
 #include <atomic>
 #include <condition_variable>
 
@@ -17,8 +17,7 @@ class Server {
     Server();
     ~Server() = default;
 
-    SignalManager m_EventManager;
-    SubsystemManager m_SubsystemManager;
+    ServerModuleManager m_ModuleManager;
     CommandManager m_CommandManager;
 
     std::atomic<bool> m_Running;
@@ -45,8 +44,7 @@ public:
     [[nodiscard]] bool isRunning() const { return m_Running; }
     [[nodiscard]] bool isDaemonized() const { return m_Daemonized; }
     [[nodiscard]] std::string workingDirectory() const { return m_WorkingDirectory; }
-    [[nodiscard]] SignalManager &signalManager() { return m_EventManager; }
-    [[nodiscard]] SubsystemManager &subsystemManager() { return m_SubsystemManager; }
+    [[nodiscard]] ServerModuleManager &moduleManager() { return m_ModuleManager; }
     [[nodiscard]] CommandManager &commandManager() { return m_CommandManager; }
 
     // Daemon stuff

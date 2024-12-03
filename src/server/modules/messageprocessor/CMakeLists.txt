@@ -1,6 +1,6 @@
 add_library(MessageModule STATIC
-        MessageModule.cpp
-        MessageModule.h
+        MessageProcessor.cpp
+        MessageProcessor.h
 )
 
 target_link_libraries(MessageModule
