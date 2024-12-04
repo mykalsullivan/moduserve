@@ -6,11 +6,16 @@
 #include "common/PCH.h"
 #include <getopt.h>
 #include <filesystem>
+#include <mutex>
+#include <condition_variable>
 
-#include "modules/networkengine/NetworkEngine.h"
 #include "modules/networkengine/NetworkEngine.h"
 #include "modules/messageprocessor/MessageProcessor.h"
 
+std::mutex mutex;
+std::condition_variable cv;
+
+// Forward declaration(s)
 void printUsage();
 
 Server::Server() : m_Running(false), m_Daemonized(false)
@@ -31,8 +36,8 @@ int Server::run(int argc, char **argv)
 
     m_Running = true;
 
-    std::unique_lock lock(m_Mutex);
-    m_CV.wait(lock, [this] {
+    std::unique_lock lock(mutex);
+    cv.wait(lock, [this] {
         return !m_Running;
     });
     return 0;
@@ -42,7 +47,7 @@ int Server::run(int argc, char **argv)
 void Server::stop()
 {
     m_Running = false;
-    m_CV.notify_one();
+    cv.notify_one();
     logMessage(LogLevel::Info, "Server shutting down...");
 }
 
@@ -78,21 +83,7 @@ int Server::init(int argc, char **argv)
         }
 
     // 8. Register built-in subsystems
-    m_ModuleManager.registerSubsystem(std::make_unique<NetworkEngine>());
-    m_ModuleManager.registerSubsystem(std::make_unique<MessageProcessor>());
 
-    // 9. Initialize subsystems
-    for (auto &ss : m_ModuleManager)
-    {
-        int result = ss.second->init();
-        if (result == 0)
-            logMessage(LogLevel::Info, "Subsystem \"" + ss.second->name() + "\" initialized");
-        else
-        {
-            logMessage(LogLevel::Error, "Subsystem \"" + ss.second->name() + "\" failed to initialize");
-            return 1;
-        }
-    }
     return 0;
 }
 

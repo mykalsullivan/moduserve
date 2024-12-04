@@ -5,7 +5,7 @@
 #pragma once
 #include "../ServerModule.h"
 #include "Connection.h"
-#include "server/ServerSignals.h"
+#include "server/ServerSignal.h"
 
 #ifndef _WIN32
 #include <netinet/in.h>
@@ -42,30 +42,30 @@ struct Metrics {
 
 class NetworkEngine : public ServerModule {
 public signals:
-    static void onStartup() {}
-    static void onShutdown() {}
+    static Signal<> onStartup;
+    static Signal<> onShutdown;
 
-    static void beforeAccept(Connection) {}
-    static void onAccept(Connection) {}
-    static void afterAccept(Connection) {}
+    static Signal<Connection> beforeAccept;
+    static Signal<Connection> acceptSignal;
+    static Signal<Connection> afterAccept;
 
-    static void beforeDisconnect(Connection) {}
-    static void onDisconnect(Connection) {}
-    static void afterDisconnect(Connection) {}
+    static Signal<Connection> beforeDisconnect;
+    static Signal<Connection> disconnectSignal;
+    static Signal<Connection> afterDisconnect;
 
-    static void beforeDataSend(Connection) {}
-    static void onDataSend(Connection) {}
-    static void afterDataSend(Connection) {}
+    static Signal<Connection> beforeSendData;
+    static Signal<Connection> sendDataSignal;
+    static Signal<Connection> afterSendData;
 
-    static void beforeDataReceive(Connection) {}
-    static void onDataReceive(Connection) {}
-    static void afterDataReceive(Connection) {}
+    static Signal<Connection> beforeReceiveData;
+    static Signal<Connection> receiveDataSignal;
+    static Signal<Connection> afterReceiveData;
 
-    static void beforeDataBroadcast(Connection) {}
-    static void onDataBroadcast(Connection) {}
-    static void afterDataBroadcast(Connection) {}
+    static Signal<Connection, const std::string &> beforeBroadcastData;
+    static Signal<Connection, const std::string &> broadcastData;
+    static Signal<Connection, const std::string &> afterBroadcastData;
 
-    static void onReceiveKeepalive(Connection) {}
+    static Signal<Connection> onReceiveKeepalive;
 
 public slots:
     static void broadcast(Connection, const std::string &);

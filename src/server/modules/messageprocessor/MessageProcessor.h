@@ -4,7 +4,7 @@
 
 #pragma once
 #include "../ServerModule.h"
-#include "server/ServerSignals.h"
+#include "server/ServerSignal.h"
 #include "../networkengine/Connection.h"
 #include <string>
 
@@ -12,12 +12,15 @@
 class Message;
 
 class MessageProcessor : public ServerModule {
-public signals:
-    static void beforeParse() {}
-    static void afterParse() {}
+    friend class NetworkEngine;
 
-private slots:
-    static void handleMessage(Connection sender, const std::string &message);
+public signals:
+    static Signal<Connection, const std::string &> beforeMessageParse;;
+    static Signal<Connection, const std::string &> processMessage;
+    static Signal<Connection, const std::string &> afterMessageParse;
+
+public slots:
+    static void onProcessMessage(Connection sender, const std::string &message);
 
 public:
     ~MessageProcessor() override = default;

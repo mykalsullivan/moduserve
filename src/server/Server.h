@@ -3,9 +3,7 @@
 //
 
 #pragma once
-#include "modules/ServerModuleManager.h"
-#include "commands/CommandManager.h"
-#include "ServerSignals.h"
+#include "ServerSignal.h"
 #include <atomic>
 #include <condition_variable>
 
@@ -14,22 +12,23 @@ class Subsystem;
 class Command;
 
 class Server {
-    Server();
-    ~Server() = default;
+public signals:
+    Signal<> finishedInitialization;
 
-    ServerModuleManager m_ModuleManager;
-    CommandManager m_CommandManager;
+public slots:
+
+
+private:
+    Server();
 
     std::atomic<bool> m_Running;
     bool m_Daemonized;
     std::string m_WorkingDirectory;
 
-    mutable std::mutex m_Mutex;
-    std::condition_variable m_CV;
-
 public:
     // Singleton instance method
     static Server &instance();
+    ~Server() = default;
 
     // Delete copy constructor and assignment operators
     Server(const Server &) = delete;
@@ -44,8 +43,6 @@ public:
     [[nodiscard]] bool isRunning() const { return m_Running; }
     [[nodiscard]] bool isDaemonized() const { return m_Daemonized; }
     [[nodiscard]] std::string workingDirectory() const { return m_WorkingDirectory; }
-    [[nodiscard]] ServerModuleManager &moduleManager() { return m_ModuleManager; }
-    [[nodiscard]] CommandManager &commandManager() { return m_CommandManager; }
 
     // Daemon stuff
     void daemonize();

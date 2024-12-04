@@ -1,3 +1,0 @@
-add_subdirectory(database_module)
-add_subdirectory(user_module)
-add_subdirectory(bf_module)

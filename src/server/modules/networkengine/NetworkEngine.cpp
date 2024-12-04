@@ -12,6 +12,8 @@
 #include <fcntl.h>
 #include <entt/entt.hpp>
 
+#include "server/modules/messageprocessor/MessageProcessor.h"
+
 #ifndef _WIN32
 #include <arpa/inet.h>
 #include <unistd.h>
@@ -93,7 +95,7 @@ NetworkEngine::NetworkEngine()
 
 
     // 6. Bind server connection components
-    g_Registry.emplace<Server>(serverConnection);
+    g_Registry.emplace<ServerConnection>(serverConnection);
     g_Registry.emplace<ServerInfo>(serverConnection);
     g_Registry.emplace<Metrics>(serverConnection);
 
@@ -134,22 +136,22 @@ int NetworkEngine::init()
 #endif
 
     // Connect the signals to slots
-    ServerSignal::connect(onAccept, [](Connection client) {
+    acceptSignal.connect([](Connection client) {
         std::string ip = getIP(client);
         int port = getPort(client);
         logMessage(LogLevel::Info, "Client @ " + ip + ':' + std::to_string(port) + " connected");
     });
-    ServerSignal::connect(onDisconnect, [](Connection client) {
+    disconnectSignal.connect([](Connection client) {
         std::string ip = getIP(client);
         int port = getPort(client);
         logMessage(LogLevel::Info, "Client @ " + ip + ':' + std::to_string(port) + " disconnected");
     });
-    ServerSignal::connect(onReceiveKeepalive, [](Connection client) {
+    onReceiveKeepalive.connect([](Connection client) {
         std::string ip = getIP(client);
         int port = getPort(client);
         logMessage(LogLevel::Debug, "Received keepalive from client @ " + ip + ':' + std::to_string(port));
     });
-    ServerSignal::connect(onDataBroadcast, &NetworkEngine::broadcast);
+    broadcastData.connect(&broadcast);
 
 
     auto acceptorCoroutine = ::acceptorCoroutineFunc();
@@ -162,7 +164,7 @@ int NetworkEngine::init()
 void NetworkEngine::broadcast(Connection sender, const std::string &data)
 {
     //logMessage(LogLevel::DEBUG, "Attempting to broadcast message...");
-    if (beforeDataBroadcast) beforeDataBroadcast(sender);
+    beforeBroadcastData(std::move(sender), data);
 
     auto connections = g_Registry.view<ClientConnection>();
     for (auto i : connections)
@@ -181,7 +183,7 @@ void NetworkEngine::broadcast(Connection sender, const std::string &data)
             logMessage(LogLevel::Error, "Failed to send message to client @ " + ip + ':' + std::to_string(port));
     }
 
-    if (afterDataBroadcast) afterDataBroadcast(sender);
+    afterBroadcastData(std::move(sender), data);
 }
 
 [[nodiscard]] Connection NetworkEngine::getServer()
@@ -220,7 +222,7 @@ bool NetworkEngine::sendData(Connection sender, const std::string &data)
     // Don't do anything if the socket is invalid or data is empty
     if (socket.fd == -1 || data.empty()) [[unlikely]] return false;
 
-    if (beforeDataSend) beforeDataSend(sender);
+    beforeSendData(std::move(sender));
 
     // Attempt to send data
     ssize_t bytesSent = send(socket.fd, data.c_str(), data.length(), 0);
@@ -283,13 +285,13 @@ bool NetworkEngine::disconnect(Connection client)
     std::lock_guard lock(g_Mutex);
 
     // Do stuff before disconnection
-    if (beforeDisconnect) beforeDisconnect(client);
+    beforeDisconnect(std::move(client));
 
     // Remove connection from registry
     g_Registry.destroy(static_cast<entt::entity>(client));
 
     // Do stuff after disconnection
-    if (afterDisconnect) afterDisconnect(client);
+    afterDisconnect(std::move(client));
     return true;
 }
 
@@ -374,7 +376,7 @@ bool NetworkEngine::disconnect(Connection client)
 
 std::future<void> acceptorCoroutineFunc()
 {
-    return std::async(std::launch::async, [this]
+    return std::async(std::launch::async, []
     {
         while (server.isRunning())
         {
@@ -388,12 +390,12 @@ std::future<void> acceptorCoroutineFunc()
 }
 
 std::future<void> eventCoroutineFunc() {
-    return std::async(std::launch::async, [this]
+    return std::async(std::launch::async, []
     {
         while (server.isRunning())
         {
             std::unique_lock lock(m_ThreadMutex);
-            m_ThreadCV.wait(lock, [this] {
+            m_ThreadCV.wait(lock, [] {
                 return !server.isRunning() || NetworkEngine::size() > 1;
             });
             if (!server.isRunning()) break;
@@ -451,7 +453,7 @@ void processConnections()
         {
             // Process message if it's valid
             //logMessage(LogLevel::DEBUG, "Processing message...");
-            if (NetworkEngine::onDataReceive) NetworkEngine::onDataReceive(client);
+            MessageProcessor::processMessage(std::move(client), message);
             return false; // Don't purge this connection
         }
         // Purge if no message is received and there is no pending data
@@ -515,12 +517,12 @@ void processConnections()
     g_Registry.emplace<Metrics>(connection);
 
     // 6. Bind destroy function to connection
-    if (!g_Registry.on_destroy<SocketInfo>().connect<onDestroyFunction>(connection))
-    {
-        logMessage(LogLevel::Error, "Failed to bind destroy function to connection");
-        g_Registry.destroy(connection);
-        return -1;
-    }
+    // if (!g_Registry.on_destroy<SocketInfo>().connect<onDestroyFunction>(connection))
+    // {
+    //     logMessage(LogLevel::Error, "Failed to bind destroy function to connection");
+    //     g_Registry.destroy(connection);
+    //     return -1;
+    // }
     return static_cast<int>(connection);
 }
 
@@ -585,7 +587,7 @@ Connection acceptClient()
 
     auto clientConnection = static_cast<Connection>(clientID);
 
-    if (NetworkEngine::onAccept) NetworkEngine::onAccept(clientConnection);
+    NetworkEngine::acceptSignal(std::move(clientConnection));
     return clientConnection;
 }
 

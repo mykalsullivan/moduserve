@@ -13,9 +13,6 @@
 
 #endif
 
-#include "server/commands/stop_command/StopCommand.h"
-#include "server/commands/help_command/HelpCommand.h"
-
 static CommandRegistry commandRegistry;
 
 CommandManager::CommandManager()

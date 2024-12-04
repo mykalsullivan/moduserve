@@ -8,4 +8,8 @@ class ServerModule {
 public:
     virtual ~ServerModule() = default;
     virtual int init() = 0;
+
+protected:
+    bool initialized = false;
+    bool active = false;
 };

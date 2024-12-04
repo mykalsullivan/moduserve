@@ -9,5 +9,5 @@ target_link_libraries(Commands
         HelpCommand
 )
 
-add_subdirectory(help_command)
-add_subdirectory(stop_command)
+add_subdirectory(server/help_command)
+add_subdirectory(server/stop_command)
