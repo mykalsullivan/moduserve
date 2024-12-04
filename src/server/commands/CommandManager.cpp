@@ -4,7 +4,6 @@
 
 #include "CommandManager.h"
 #include "server/commands/CommandRegistry.h"
-#include "common/Logger.h"
 #include <stdexcept>
 
 #ifndef _WIN32

@@ -1,7 +1,7 @@
-#add_library(DatabaseSubsystem STATIC
-#
+#add_library(DatabaseEngine STATIC
+#       DatabaseEngine.cpp
 #)
 
-#target_link_libraries(DatabaseSubsystem
+#target_link_libraries(DatabaseEngine
 #        XServerCommon
 #)

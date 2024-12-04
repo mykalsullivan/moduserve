@@ -1,12 +1,11 @@
-add_library(ServerModules STATIC
-        ServerModule.h
+add_library(Modules STATIC
+        NetworkEngine.cpp
+        MessageProcessor.cpp
+        Logger.cpp
 )
 
-target_link_libraries(ServerModules
+target_link_libraries(Modules PRIVATE
         XServerCommon
-        ConnectionModule
-        MessageModule
 )
 
-add_subdirectory(networkengine)
-add_subdirectory(messageprocessor)
+#add_subdirectory(optional)

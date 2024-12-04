@@ -4,15 +4,19 @@
 
 #include "MessageProcessor.h"
 #include <common/PCH.h>
-#include <server/modules/networkengine/NetworkEngine.h>
+#include <server/modules/NetworkEngine.h>
 
 // Forward declaration(s)
 void parseMessage(Connection sender, const std::string &message);
 
-int MessageProcessor::init()
+// Static signal definitions
+Signal<Connection, const std::string &> MessageProcessor::beforeMessageParse;;
+Signal<Connection, const std::string &> MessageProcessor::processMessage;
+Signal<Connection, const std::string &> MessageProcessor::afterMessageParse;
+
+void MessageProcessor::init()
 {
     processMessage.connect(&onProcessMessage);
-    return 0;
 }
 
 // This will need to do other stuff in the future

@@ -2,5 +2,6 @@
 
 int main(int argc, char **argv)
 {
-    return Server::instance().run(argc, argv);
+    Server server;
+    return server.run(argc, argv);
 }

@@ -2,14 +2,16 @@
 add_executable(XServer
         main.cpp
         Server.cpp
+        ModuleManager.h
+        modules/Logger.h
+        modules/Logger.cpp
 )
 
 # Link dependencies to the server executable
 target_link_libraries(XServer
         XServerCommon
-        ServerModules
+        Modules
         Commands
-        OptionalServerModules
 )
 
 #target_link_libraries(XServerCommon PRIVATE

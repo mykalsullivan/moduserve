@@ -2,33 +2,14 @@
 // Created by msullivan on 11/10/24.
 //
 
-#include "Logger.h"
+#include "OldLogger.h"
 #include <iomanip>
 
-std::string getCurrentTimestamp()
-{
-    auto now = std::chrono::system_clock::now();
-    auto timePoint = std::chrono::system_clock::to_time_t(now);
-    std::tm tm = *std::localtime(&timePoint);
+// Forward declaration(s)
+std::string getCurrentTimestamp();
+std::string logLevelToString(LogLevel leve);
 
-    std::ostringstream timestampStream;
-    timestampStream << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
-    return timestampStream.str();
-}
-
-std::string logLevelToString(LogLevel level)
-{
-    switch (level)
-    {
-        case LogLevel::Debug: return "DEBUG";
-        case LogLevel::Info: return "INFO";
-        case LogLevel::Warning: return "WARNING";
-        case LogLevel::Error: return "ERROR";
-        default: return "UNKNOWN";
-    }
-}
-
-void logMessage(LogLevel level, const std::string &message)
+void log(LogLevel level, const std::string &message)
 {
     std::string timestamp = getCurrentTimestamp();
     std::string levelStr = logLevelToString(level);
@@ -55,4 +36,27 @@ void logMessage(LogLevel level, const std::string &message)
     std::ostringstream logStream;
     logStream << colorCode << "[" << timestamp << "] [" << levelStr << "] " << message << "\033[0m";
     std::cout << logStream.str() << std::endl;
+}
+
+std::string getCurrentTimestamp()
+{
+    auto now = std::chrono::system_clock::now();
+    auto timePoint = std::chrono::system_clock::to_time_t(now);
+    std::tm tm = *std::localtime(&timePoint);
+
+    std::ostringstream timestampStream;
+    timestampStream << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
+    return timestampStream.str();
+}
+
+std::string logLevelToString(LogLevel level)
+{
+    switch (level)
+    {
+        case LogLevel::Debug: return "DEBUG";
+        case LogLevel::Info: return "INFO";
+        case LogLevel::Warning: return "WARNING";
+        case LogLevel::Error: return "ERROR";
+        default: return "UNKNOWN";
+    }
 }

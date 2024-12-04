@@ -3,42 +3,16 @@
 //
 
 #pragma once
-#include "../ServerModule.h"
-#include "Connection.h"
-#include "server/ServerSignal.h"
-
-#ifndef _WIN32
-#include <netinet/in.h>
-#else
-#include <winsock2.h>
-#endif
+#include "ServerModule.h"
+#include "server/Signal.h"
 
 /* Components */
-struct ServerConnection {};
-struct ClientConnection {};
-
-struct ServerInfo {
-    int maxConnections = -1;
-};
-
-struct ClientInfo {
-    std::chrono::steady_clock::time_point lastActivityTime;
-};
-
-// Components
-struct SocketInfo {
-#ifndef _WIN32
-    int fd = -1;
-#else
-    SOCKET fd = -1;
-#endif
-    sockaddr_in address {};
-};
-
-struct Metrics {
-    size_t bytesSent = 0;
-    size_t bytesReceived = 0;
-};
+struct ServerConnection;
+struct ServerInfo;
+struct ClientConnection;
+struct ClientInfo;
+struct SocketInfo;
+struct Metrics;
 
 class NetworkEngine : public ServerModule {
 public signals:
@@ -73,7 +47,10 @@ public slots:
 public:
     NetworkEngine();
     ~NetworkEngine() override;
-    int init() override;
+    void init() override;
+    void run() override;
+    [[nodiscard]] std::vector<std::type_index> requiredDependencies() const override { return {}; }
+    [[nodiscard]] std::vector<std::type_index> optionalDependencies() const override { return {}; }
 
     static Connection getServer();
     static std::vector<Connection> clients();
@@ -89,6 +66,6 @@ public:
     static std::string getIP(Connection);
     static int getPort(Connection);
 
-    static bool isActive(Connection, int timeout);
-    static bool validate(Connection);
+    static bool isActiveConnection(Connection, int timeout);
+    static bool isValidConnection(Connection);
 };

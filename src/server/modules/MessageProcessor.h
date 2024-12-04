@@ -3,9 +3,8 @@
 //
 
 #pragma once
-#include "../ServerModule.h"
-#include "server/ServerSignal.h"
-#include "../networkengine/Connection.h"
+#include "ServerModule.h"
+#include "server/Signal.h"
 #include <string>
 
 // Forward declaration(s)
@@ -24,5 +23,8 @@ public slots:
 
 public:
     ~MessageProcessor() override = default;
-    int init() override;
+    void init() override;
+    void run() override {}
+    [[nodiscard]] std::vector<std::type_index> requiredDependencies() const override { return {}; }
+    [[nodiscard]] std::vector<std::type_index> optionalDependencies() const override { return {}; }
 };

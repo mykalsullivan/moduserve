@@ -1,7 +1,6 @@
 # Create a static library for the common code
 add_library(XServerCommon STATIC
         PCH.cpp
-        Logger.cpp
         Message.cpp
 )
 

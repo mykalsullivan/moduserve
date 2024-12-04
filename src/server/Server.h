@@ -3,32 +3,25 @@
 //
 
 #pragma once
-#include "ServerSignal.h"
+#include "Signal.h"
 #include <atomic>
-#include <condition_variable>
-
-// Forward declaration(s)
-class Subsystem;
-class Command;
+#include <optional>
 
 class Server {
 public signals:
-    Signal<> finishedInitialization;
-
-public slots:
-
+    static Signal<> finishedInitialization;
+    static Signal<> serverRun;
+    static Signal<> serverStop;
+    static Signal<> serverDaemonized;
+    static Signal<> serverAddModule;
 
 private:
-    Server();
-
     std::atomic<bool> m_Running;
     bool m_Daemonized;
-    std::string m_WorkingDirectory;
 
 public:
-    // Singleton instance method
-    static Server &instance();
-    ~Server() = default;
+    Server();
+    virtual ~Server() = default;
 
     // Delete copy constructor and assignment operators
     Server(const Server &) = delete;
@@ -39,16 +32,25 @@ public:
     // Runtime stuff
     int run(int argc, char **argv);
     void stop();
+    void daemonize();
 
     [[nodiscard]] bool isRunning() const { return m_Running; }
     [[nodiscard]] bool isDaemonized() const { return m_Daemonized; }
-    [[nodiscard]] std::string workingDirectory() const { return m_WorkingDirectory; }
+    [[nodiscard]] std::string workingDirectory() const;
 
-    // Daemon stuff
-    void daemonize();
+    // Add a server module
+    template<typename T, typename... Args>
+    static void addModule(Args &&... args);
 
-private:
-    int init(int argc, char **argv);
+    // Retrieve a module by type
+    template<typename T>
+    static std::shared_ptr<T> getModule();
+
+    // Retrieve a module by type (optional)
+    template<typename T>
+    static std::optional<std::shared_ptr<T>> getOptionalModule();
+
+    // Returns true if the module is loaded
+    template<typename T>
+    static bool isModuleLoaded();
 };
-
-#define server Server::instance()

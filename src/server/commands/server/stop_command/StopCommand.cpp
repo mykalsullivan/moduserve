@@ -7,7 +7,7 @@
 
 void StopCommand::execute(const std::string &args)
 {
-    Server::instance().stop();
+
 }
 
 std::string StopCommand::usage() const
