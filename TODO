@@ -22,3 +22,4 @@
 - registerSubsystem() and registerCommand() need to take a command class as a template argument instead of taking a pointer directly
 
 - Move the registry inside NetworkEngine outside of it to be used globally (maybe)
+- CHANGE THE NAME FROM XServer TO SOMETHING LESS, WELL, ALREADY USED AND BAD.
