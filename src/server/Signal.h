@@ -7,6 +7,10 @@
 #include <mutex>
 #include <functional>
 
+
+// Temp
+#include  "server/modules/Logger.h"
+
 template<typename... Args>
 class Signal {
     std::mutex m_Mutex;
@@ -23,7 +27,8 @@ public:
 
     // Disconnect a specific slot
     template <typename Slot>
-    void disconnect(Slot&& slot) {
+    void disconnect(Slot&& slot)
+    {
         std::lock_guard lock(m_Mutex);
         m_Slots.erase(std::remove_if(m_Slots.begin(), m_Slots.end(),
             [&](const std::function<void()>& storedSlot) {
@@ -32,15 +37,17 @@ public:
     }
 
     // Emit the signal (invoke all connected slots)
-    void emit(Args &&... args) {
+    void emit(Args &&... args)
+    {
+        Logger::log(LogLevel::Debug, "Emitting signal...");
         std::lock_guard lock(m_Mutex);
-        for (auto& slot : m_Slots) {
+        for (auto& slot : m_Slots)
             slot(std::forward<Args>(args)...);
-        }
     }
 
     // Operator() to emit the signal
-    void operator()(Args &&... args) {
+    void operator()(Args &&... args)
+    {
         emit(std::forward<Args>(args)...);
     }
 };

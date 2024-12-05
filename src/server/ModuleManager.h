@@ -54,7 +54,15 @@ public:
     void initializeModules()
     {
         std::lock_guard lock(m_Mutex);
-        for (auto& [type, module] : m_Modules)
-            module->init(); // Will need to store args
+        for (auto &[type, module] : m_Modules)
+            module->init();
+    }
+
+    // Start all registered and initialized modules
+    void startModules()
+    {
+        std::lock_guard lock(m_Mutex);
+        for (auto &[type, module] : m_Modules)
+            module->run();
     }
 };

@@ -114,6 +114,7 @@ int init(int argc, char **argv)
     ModuleManager::instance().registerModule<NetworkEngine>();
     ModuleManager::instance().registerModule<MessageProcessor>();
     ModuleManager::instance().initializeModules();
+    ModuleManager::instance().startModules();
     return 0;
 }
 

@@ -16,36 +16,25 @@ struct Metrics;
 
 class NetworkEngine : public ServerModule {
 public signals:
-    static Signal<> onStartup;
-    static Signal<> onShutdown;
+    static Signal<> started;
+    static Signal<> shutdown;
 
-    static Signal<Connection> beforeAccept;
-    static Signal<Connection> acceptSignal;
-    static Signal<Connection> afterAccept;
-
-    static Signal<Connection> beforeDisconnect;
-    static Signal<Connection> disconnectSignal;
-    static Signal<Connection> afterDisconnect;
-
-    static Signal<Connection> beforeSendData;
-    static Signal<Connection> sendDataSignal;
-    static Signal<Connection> afterSendData;
-
-    static Signal<Connection> beforeReceiveData;
-    static Signal<Connection> receiveDataSignal;
-    static Signal<Connection> afterReceiveData;
-
-    static Signal<Connection, const std::string &> beforeBroadcastData;
+    static Signal<Connection> clientAccepted;
+    static Signal<Connection> clientDisconnected;
+    static Signal<Connection, const std::string &> sentData;
+    static Signal<Connection, const std::string &> receivedData;
     static Signal<Connection, const std::string &> broadcastData;
-    static Signal<Connection, const std::string &> afterBroadcastData;
 
-    static Signal<Connection> onReceiveKeepalive;
+    static Signal<Connection> receivedKeepalive;
 
 public slots:
-    static void broadcast(Connection, const std::string &);
+    static void onAccept(Connection);
+    static void onDisconnect(Connection);
+    static void onReceiveKeepalive(Connection);
+    static void onReceiveBroadcast(Connection, const std::string &);
 
 public:
-    NetworkEngine();
+    NetworkEngine() = default; // Nothing crazy for now
     ~NetworkEngine() override;
     void init() override;
     void run() override;

@@ -14,12 +14,10 @@ class MessageProcessor : public ServerModule {
     friend class NetworkEngine;
 
 public signals:
-    static Signal<Connection, const std::string &> beforeMessageParse;;
-    static Signal<Connection, const std::string &> processMessage;
-    static Signal<Connection, const std::string &> afterMessageParse;
+    static Signal<Connection, const std::string &> receivedCommand;
 
 public slots:
-    static void onProcessMessage(Connection sender, const std::string &message);
+    static void processMessage(Connection sender, const std::string &message);
 
 public:
     ~MessageProcessor() override = default;
