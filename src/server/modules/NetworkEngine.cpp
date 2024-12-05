@@ -220,7 +220,7 @@ void NetworkEngine::run()
 {
     // Start acceptor thread
     acceptorThread = std::thread([this] {
-        Logger::log(LogLevel::Debug, "Started acceptor coroutine...");
+        Logger::log(LogLevel::Debug, "Started acceptor thread...");
         while (isActive())
         {
             std::string message = "Waiting on clients to join... (currently: " + std::to_string(size()) + ')';
@@ -234,7 +234,7 @@ void NetworkEngine::run()
 
     // Start event thread
     eventThread = std::thread([this] {
-        Logger::log(LogLevel::Debug, "Started event coroutine...");
+        Logger::log(LogLevel::Debug, "Started event thread...");
         while (isActive())
         {
             Logger::log(LogLevel::Debug, "Waiting on clients to do stuff...");
@@ -623,17 +623,20 @@ inline bool startListening(int serverFD)
 // Accepts a client and returns a Connection ID if successful
 bool acceptClient()
 {
+    std::string message = "Waiting on new connections...";
+    Logger::log(LogLevel::Debug, message);
+
     sockaddr_in clientAddress {};
     socklen_t clientAddressLength = sizeof(clientAddress);
 
-    auto serverSocket = g_ConnectionRegistry.get<SocketInfo>(fdToEntity(g_ServerConnection));
-    int clientFD = accept(serverSocket.fd, reinterpret_cast<sockaddr *>(&clientAddress), &clientAddressLength);
+    auto serverFD = NetworkEngine::getFD(g_ServerConnection);
+    int clientFD = accept(serverFD, reinterpret_cast<sockaddr *>(&clientAddress), &clientAddressLength); // TODO issue here
     if (clientFD == -1) return false;
 
-    std::string message = "Attempted to accept a new connection...";
+    message = "Attempted to accept a new connection...";
     Logger::log(LogLevel::Debug, message);
 
-    auto client = g_ConnectionRegistry.create();
+    const auto client = g_ConnectionRegistry.create();
 
     g_ConnectionRegistry.emplace<ClientConnection>(client);
     g_ConnectionRegistry.emplace<ClientInfo>(client);
