@@ -7,10 +7,6 @@
 #include <mutex>
 #include <functional>
 
-
-// Temp
-#include  "server/modules/Logger.h"
-
 template<typename... Args>
 class Signal {
     std::mutex m_Mutex;

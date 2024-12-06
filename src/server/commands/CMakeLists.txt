@@ -1,5 +1,4 @@
 add_library(Commands STATIC
-        CommandManager.cpp
         CommandRegistry.cpp
 )
 

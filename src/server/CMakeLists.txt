@@ -2,7 +2,6 @@
 add_executable(XServer
         main.cpp
         Server.cpp
-        modules/Logger.cpp
 )
 
 # Link dependencies to the server executable
