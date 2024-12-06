@@ -1,9 +1,4 @@
-- The Server class now uses a singleton. Unfortunately, this isn't implemented properly and needs extern to be used across the other translation units
 - Command registration doesn't work
-- The Server sub-services use std::barrier, which is not applicable since each sub-service isn't running on its own thread
-    - Instead, a CV will have to do. Maybe create a SubService virtual class?
-- I might remove the UserAuthenticator and UserManager classes out so that I can make the Server more abstract and extendable.
 - The server port should be random if not specified by the user upon startup
 - You can no longer specify the server port upon startup
 - The logger needs to display which module is sending the log message
-- After a client joins, the client fd blocks indefinitely. Please fix this for the third or fourth time.

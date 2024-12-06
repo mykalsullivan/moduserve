@@ -2,8 +2,6 @@
 add_executable(XServer
         main.cpp
         Server.cpp
-        ModuleManager.h
-        modules/Logger.h
         modules/Logger.cpp
 )
 
