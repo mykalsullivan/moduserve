@@ -3,6 +3,7 @@
 //
 
 #include "Logger.h"
+#include <iostream>
 #include <iomanip>
 
 // Forward declaration(s)

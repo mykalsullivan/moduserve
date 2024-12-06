@@ -3,7 +3,6 @@
 //
 
 #include "HelpCommand.h"
-#include "server/Server.h"
 
 void HelpCommand::execute(const std::string &args)
 {

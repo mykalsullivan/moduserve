@@ -1,14 +1,15 @@
 # Define the server execuable
-add_executable(XServer
+add_executable(moduserveServer
         main.cpp
         Server.cpp
 )
 
 # Link dependencies to the server executable
-target_link_libraries(XServer
-        XServerCommon
+target_link_libraries(moduserveServer
+        moduserveCommon
         Modules
         Commands
+        BFModule
 )
 
 #target_link_libraries(XServerCommon PRIVATE
@@ -31,3 +32,4 @@ endif()
 
 add_subdirectory(modules)
 add_subdirectory(commands)
+add_subdirectory(optional_modules)

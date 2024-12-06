@@ -3,7 +3,6 @@
 //
 
 #include "StopCommand.h"
-#include "server/Server.h"
 
 void StopCommand::execute(const std::string &args)
 {

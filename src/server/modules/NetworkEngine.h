@@ -4,7 +4,6 @@
 
 #pragma once
 #include "ServerModule.h"
-#include "server/Signal.h"
 
 /* Components */
 struct ServerConnection;
@@ -32,8 +31,10 @@ public slots:
     static void onReceivedData(Connection, const std::string &);
     static void onReceivedBroadcast(Connection, const std::string &);
     static void onReceivedKeepalive(Connection);
+    static void processMessage(Connection connection, const std::string &);
 
 public:
+  	explicit NetworkEngine(int port);
     ~NetworkEngine() override;
     void init() override;
     void run() override;

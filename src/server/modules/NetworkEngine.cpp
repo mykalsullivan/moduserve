@@ -5,12 +5,16 @@
 #include "NetworkEngine.h"
 #include "server/Server.h"
 #include "common/Message.h"
+#include <sstream>
 #include <future>
 #include <barrier>
 #include <fcntl.h>
 #include <entt/entt.hpp>
 
 #include "server/modules/Logger.h"
+
+// Temp
+#include "server/optional_modules/BFModule.h"
 
 #ifndef _WIN32
 #include <arpa/inet.h>
@@ -52,17 +56,20 @@ struct Metrics {
 };
 
 // Global variables
-entt::registry g_ConnectionRegistry;
-Connection g_ServerConnection;
+namespace {
+    entt::registry g_ConnectionRegistry;
+    Connection g_ServerConnection;
+    int g_Port;
 
-std::mutex g_NetworkEngineMutex;
-std::condition_variable g_NetworkEngineCV;
+    std::mutex g_NetworkEngineMutex;
+    std::condition_variable g_NetworkEngineCV;
 
-std::thread acceptorThread;
-std::thread eventThread;
+    std::thread acceptorThread;
+    std::thread eventThread;
 
-std::mutex g_NetworkThreadMutex;
-std::barrier g_NetworkThreadBarrier(2);
+    std::mutex g_NetworkThreadMutex;
+    std::barrier g_NetworkThreadBarrier(2);
+}
 
 // Forward declaration(s)
 void validateConnections();
@@ -115,35 +122,77 @@ void NetworkEngine::onSentData(Connection connection, const std::string &data)
     std::string ip = getIP(connection);
     std::string port = std::to_string(getPort(connection));
     std::string message = "Sent \"" + data + "\" to client @ " + ip + ':' + port;
-    Logger::log(LogLevel::Info, message);
+    Logger::log(LogLevel::Debug, message);
 }
 
 void NetworkEngine::onReceivedData(Connection connection, const std::string &data)
 {
-    if (data[0] == '/')
-    {
-        //        auto commandSubsystem = dynamic_cast<CommandManager *>(Server::instance().subsystem("CommandManager"));
-        //        auto it = commandSubsystem->find(message);
-        //        if (it != commandSubsystem->end())
-        //        {
-        //            auto command = it->second.operator()();
-        //            command->execute(message);
-        //            delete command;
-        //        }
+    std::string ip = getIP(connection);
+    std::string port = std::to_string(getPort(connection));
+    std::string message = "Client @ " + ip + ':' + port + ": \"" + data + '"';
+    Logger::log(LogLevel::Debug, message);
+}
 
-        // CommandProcessor::receiveCommand(std::move(sender), message);
+void NetworkEngine::processMessage(Connection connection, const std::string &data)
+{
+    std::istringstream ss(data);
+    std::string arg;
+    std::vector<std::string> args;
+
+    while (ss >> arg) args.emplace_back(arg);
+
+    if (args[0] == "COMMAND")
+    {
+        if (args.size() > 2)
+        {
+            // This should parse the command arguments and pass them into the command
+            if (args[1] == "bf")
+            {
+                if (args.size() > 3)
+                {
+                    if (args[2] == "execute")
+                        BFModule::receivedCode(std::move(connection), args[3]);
+                    else if (args[2] == "retrieve_pointer_address")
+                        BFModule::retrieveCurrentPointerAddress(connection);
+                    else if (args[2] == "retrieve_pointer_value")
+                        BFModule::retrieveCurrentPointerValue(connection);
+                    else if (args[2] == "retrieve_tape_values")
+                        BFModule::retrieveTapeValues(connection, std::stoi(args[3]), std::stoi(args[4]));
+                }
+            }
+            else
+                // Print usage information for the command
+                sendData(std::move(connection), "Missing command arguments");
+        }
+        else
+            sendData(std::move(connection), "Please specify a command");
+    }
+    else if (args[0] == "SAY")
+    {
+        if (args.size() > 1)
+        {
+
+        }
+        else
+            Logger::log(LogLevel::Debug, "Invalid number of arguments");
+    }
+    else if (args[0] == "BROADCAST")
+    {
+        std::string message;
+
+        for (auto i = 0; i < args.size(); i++)
+        {
+            if (i == args.size()) continue;
+            message += args[i] + ' ';
+        }
+        broadcastData(std::move(connection), message);
     }
     else if (data == "KEEPALIVE")
-    {
         receivedKeepalive(std::move(connection));
-    }
     else
     {
-        std::string ip = getIP(connection);
-        std::string port = std::to_string(getPort(connection));
-        std::string message = "Client @ " + ip + ':' + port + ": \"" + data + '"';
-        Logger::log(LogLevel::Info, message);
-        broadcastData(std::move(connection), message);
+        std::string message = "Invalid command \"" + data + '"';
+        sendData(std::move(connection), message);
     }
 }
 
@@ -152,6 +201,11 @@ void NetworkEngine::onReceivedKeepalive(Connection connection)
     std::string ip = getIP(connection);
     std::string port = std::to_string(getPort(connection));
     Logger::log(LogLevel::Debug, "Received keepalive from client @ " + ip + ':' + port);
+}
+
+NetworkEngine::NetworkEngine(int port = 7035)
+{
+    g_Port = port;
 }
 
 NetworkEngine::~NetworkEngine()
@@ -187,8 +241,7 @@ void NetworkEngine::init()
 #endif
 
     // Create the server connection
-    int port = 8000;
-    Connection serverFD = createConnection(true, port);
+    Connection serverFD = createConnection(true, g_Port);
     if (serverFD == -1)
     {
         Logger::log(LogLevel::Fatal, "Failed to create server connection");
@@ -208,7 +261,7 @@ void NetworkEngine::init()
 
     // Log server initialization details
     std::string ip = getIP(serverFD);
-    Logger::log(LogLevel::Info, "Server initialized and listening on " + ip + ':' + std::to_string(port));
+    Logger::log(LogLevel::Info, "Server initialized and listening on " + ip + ':' + std::to_string(g_Port));
 
     // Store server connection globally
     g_ServerConnection = serverFD;
@@ -218,6 +271,7 @@ void NetworkEngine::init()
     clientDisconnected.connect(onDisconnect);
     sentData.connect(onSentData);
     receivedData.connect(onReceivedData);
+    receivedData.connect(processMessage);
     receivedKeepalive.connect(onReceivedKeepalive);
     broadcastData.connect(onReceivedBroadcast);
 
@@ -269,8 +323,7 @@ void NetworkEngine::onReceivedBroadcast(Connection sender, const std::string &da
     // Construct message
     std::string ip  = getIP(sender);
     int port = getPort(sender);
-    std::string body = "Client @ " + ip + ':' + std::to_string(port) + " sent: \"" + data + '"';
-    Message message(ip, port, body);
+    Message message(ip, port, data);
 
     // Send message to all client other than the sender
     auto clientEnts = g_ConnectionRegistry.view<ClientConnection>();
@@ -347,14 +400,14 @@ std::string NetworkEngine::receiveData(Connection connection)
     std::unique_lock lock(g_NetworkEngineMutex);
     char buffer[1024] {};
     ssize_t bytesReceived = recv(socket.fd, buffer, sizeof(buffer), 0);
+    lock.unlock();
 
     if (bytesReceived == 0)
     {
-        Logger::log(LogLevel::Info, "Connection closed by peer");
+        Logger::log(LogLevel::Debug, "Connection closed by peer");
         disconnect(connection);
         return "";
     }
-    lock.unlock();
 
     if (bytesReceived < 0)
     {
@@ -390,6 +443,7 @@ bool NetworkEngine::disconnect(Connection client)
     clientDisconnected(std::move(client));
 
     // Close client socket
+    std::lock_guard lock(g_NetworkEngineMutex);
     if (getFD(client) != -1) [[unlikely]]
 #ifndef _WIN32
         close(getFD(client));
@@ -536,9 +590,7 @@ void processConnections()
 
             // Process message if received
             if (!message.empty())
-            {
                 return false;
-            }
             return false; // Purge if no message is received and there is no pending data
         });
     }

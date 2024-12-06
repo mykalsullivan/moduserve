@@ -3,10 +3,21 @@
 //
 
 #pragma once
+#include "../../server/Signal.h"
 #include <vector>
 #include <typeindex>
 
 class ServerModule {
+public signals:
+	static Signal<ServerModule> initialized;
+	static Signal<ServerModule> started;
+	static Signal<ServerModule> stopped;
+	static Signal<ServerModule, const std::string &> crashed;
+
+protected:
+    bool m_Initialized = false;
+    bool m_Active = false;
+
 public:
     virtual ~ServerModule() = default;
     virtual void init() = 0;
@@ -16,10 +27,6 @@ public:
     [[nodiscard]] bool isInitialized() const { return m_Initialized; }
     [[nodiscard]] bool isActive() const { return m_Active && m_Initialized; }
     //[[nodiscard]] std::string name() const { return std::to_string(std::type_info(this)); }
-
-protected:
-    bool m_Initialized = false;
-    bool m_Active = false;
 };
 
 using Connection = int;

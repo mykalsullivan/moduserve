@@ -3,8 +3,7 @@ add_library(Modules STATIC
         Logger.cpp
 )
 
-target_link_libraries(Modules PRIVATE
-        XServerCommon
+target_link_libraries(Modules PUBLIC
+        moduserveCommon
+        BFModule
 )
-
-#add_subdirectory(optional)

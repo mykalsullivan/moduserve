@@ -3,10 +3,8 @@ add_library(Commands STATIC
 )
 
 target_link_libraries(Commands
-        XServerCommon
-        StopCommand
-        HelpCommand
+        moduserveCommon
+        ServerCommands
 )
 
-add_subdirectory(server/help_command)
-add_subdirectory(server/stop_command)
+add_subdirectory(server)

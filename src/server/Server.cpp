@@ -20,8 +20,7 @@ std::condition_variable g_ServerCV;
 
 int init(int, char **);
 
-Server::Server() : m_Running(false), m_Daemonized(false)
-{}
+Server::Server() : m_Running(false), m_Daemonized(false) {}
 
 int Server::run(int argc, char **argv)
 {
@@ -50,31 +49,6 @@ void Server::daemonize()
     // Do nothing for now
 }
 
-template<typename T>
-std::shared_ptr<T> Server::getModule()
-{
-    return ModuleManager::instance().getModule<T>();
-}
-
-template<typename T, typename... Args>
-void Server::addModule(Args &&... args)
-{
-    ModuleManager::registerModule<T>(std::forward<Args>(args)...);
-}
-
-template<typename T>
-std::optional<std::shared_ptr<T>> Server::getOptionalModule()
-{
-    return ModuleManager::instance().getOptionalModule<T>();
-}
-
-template<typename T>
-bool Server::isModuleLoaded()
-{
-    auto module = ModuleManager::instance().getModule<T>();
-    return module ? true : false;
-}
-
 int init(int argc, char **argv)
 {
     Logger::log(LogLevel::Info, "Starting XServer...");
@@ -93,11 +67,12 @@ int init(int argc, char **argv)
 
     // 2. Parse command-line arguments
     int opt;
+    int port;
     while ((opt = getopt(argc, argv, "p:h")) != -1)
         switch (opt)
         {
             case 'p':
-                //port = std::stoi(optarg);
+                port = std::stoi(optarg);
             break;
             case 'h':
                 printUsage();
@@ -110,7 +85,7 @@ int init(int argc, char **argv)
 
     // 8. Add and initialize built-in modules
     ModuleManager::instance().registerModule<Logger>();
-    ModuleManager::instance().registerModule<NetworkEngine>();
+    ModuleManager::instance().registerModule<NetworkEngine>(port);
     ModuleManager::instance().initializeModules();
     ModuleManager::instance().startModules();
     return 0;

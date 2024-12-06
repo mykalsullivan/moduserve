@@ -4,15 +4,11 @@
 - Allow the server to start as a daemon (but don't let the user start it as a daemon after it has already been started)
 - The logger should allow you to specify the sender of the log message
 - Combine UserAuthenticator and UserSubsystem, or remove them both, or allow the option to use authentication
-- Allow the user to enable debug logging with a switch upon startup (server)
+- Allow the user to enable debug logging with a switch upon startup
 - When a connection is removed, there should be the option to give a reason WHY they are being removed
-- Use EnTT for storing Connection info stuff
-    - Decouples information from functionality
-    - We would no longer need a derived ServerConnection class
-    - Allows subsystems to add states to Connections (i.e. user information for each connection)
-- registerSubsystem() and registerCommand() need to take a command class as a template argument instead of taking a pointer directly
 
 - Move the registry inside NetworkEngine outside of it to be used globally (maybe)
-- CHANGE THE NAME FROM XServer TO SOMETHING LESS, WELL, ALREADY USED AND BAD.
 
 - Include usage info on the Command class
+- Kick users after a set amount of invalid commands
+- Encapsulate messages in a Message object
