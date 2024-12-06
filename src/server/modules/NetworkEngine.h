@@ -18,7 +18,6 @@ class NetworkEngine : public ServerModule {
 public signals:
     static Signal<> started;
     static Signal<> shutdown;
-
     static Signal<Connection> clientAccepted;
     static Signal<Connection> clientDisconnected;
     static Signal<Connection, const std::string &> sentData;
@@ -30,8 +29,10 @@ public signals:
 public slots:
     static void onAccept(Connection);
     static void onDisconnect(Connection);
-    static void onReceiveKeepalive(Connection);
-    static void onReceiveBroadcast(Connection, const std::string &);
+    static void onSentData(Connection, const std::string &);
+    static void onReceivedData(Connection, const std::string &);
+    static void onReceivedBroadcast(Connection, const std::string &);
+    static void onReceivedKeepalive(Connection);
 
 public:
     NetworkEngine() = default; // Nothing crazy for now

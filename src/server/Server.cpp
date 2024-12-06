@@ -6,7 +6,6 @@
 #include "common/PCH.h"
 #include "ModuleManager.h"
 #include "modules/NetworkEngine.h"
-#include "modules/MessageProcessor.h"
 #include "modules/Logger.h"
 #include <getopt.h>
 #include <filesystem>
@@ -112,7 +111,6 @@ int init(int argc, char **argv)
     // 8. Add and initialize built-in modules
     ModuleManager::instance().registerModule<Logger>();
     ModuleManager::instance().registerModule<NetworkEngine>();
-    ModuleManager::instance().registerModule<MessageProcessor>();
     ModuleManager::instance().initializeModules();
     ModuleManager::instance().startModules();
     return 0;

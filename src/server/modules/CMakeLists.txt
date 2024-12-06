@@ -1,6 +1,5 @@
 add_library(Modules STATIC
         NetworkEngine.cpp
-        MessageProcessor.cpp
         Logger.cpp
 )
 

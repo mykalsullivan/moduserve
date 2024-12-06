@@ -39,7 +39,6 @@ public:
     // Emit the signal (invoke all connected slots)
     void emit(Args &&... args)
     {
-        Logger::log(LogLevel::Debug, "Emitting signal...");
         std::lock_guard lock(m_Mutex);
         for (auto& slot : m_Slots)
             slot(std::forward<Args>(args)...);

@@ -14,7 +14,7 @@ public:
     [[nodiscard]] virtual std::vector<std::type_index> requiredDependencies() const = 0;
     [[nodiscard]] virtual std::vector<std::type_index> optionalDependencies() const = 0;
     [[nodiscard]] bool isInitialized() const { return m_Initialized; }
-    [[nodiscard]] bool isActive() const { return m_Active; }
+    [[nodiscard]] bool isActive() const { return m_Active && m_Initialized; }
     //[[nodiscard]] std::string name() const { return std::to_string(std::type_info(this)); }
 
 protected:

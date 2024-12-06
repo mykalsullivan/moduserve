@@ -5,4 +5,5 @@
 - I might remove the UserAuthenticator and UserManager classes out so that I can make the Server more abstract and extendable.
 - The server port should be random if not specified by the user upon startup
 - You can no longer specify the server port upon startup
-- Signals/slots need to be managed in a similar way to Qt
+- The logger needs to display which module is sending the log message
+- After a client joins, the client fd blocks indefinitely. Please fix this for the third or fourth time.

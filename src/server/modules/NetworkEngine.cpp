@@ -11,7 +11,6 @@
 #include <entt/entt.hpp>
 
 #include "server/modules/Logger.h"
-#include "server/modules/MessageProcessor.h"
 
 #ifndef _WIN32
 #include <arpa/inet.h>
@@ -35,7 +34,7 @@ struct ServerInfo {
 
 struct ClientConnection {};
 struct ClientInfo {
-    std::chrono::steady_clock::time_point lastActivityTime;
+    std::chrono::steady_clock::time_point lastActivityTime = std::chrono::steady_clock::now();
 };
 
 struct SocketInfo {
@@ -58,7 +57,6 @@ Connection g_ServerConnection;
 
 std::mutex g_NetworkEngineMutex;
 std::condition_variable g_NetworkEngineCV;
-int port = 8000;
 
 std::thread acceptorThread;
 std::thread eventThread;
@@ -67,15 +65,13 @@ std::mutex g_NetworkThreadMutex;
 std::barrier g_NetworkThreadBarrier(2);
 
 // Forward declaration(s)
-void acceptorThreadFunc(NetworkEngine &);
-void eventThreadFunc(NetworkEngine &);
 void validateConnections();
 void processConnections();
 void processConnectionsInternal(const std::function<bool(Connection)> &predicate);
-void onDestroyFunction(const SocketInfo &socket);
 
-Connection createConnection();
-int createSocket();
+Connection createConnection(bool, int);
+entt::entity createConnectionEntity(int, sockaddr_in, bool);
+int createAndConfigureSocket(bool isServer, int port);
 bool createServerAddress(sockaddr_in &address, int port);
 bool bindAddress(int serverFD, sockaddr_in serverAddress);
 bool startListening(int serverFD);
@@ -93,7 +89,6 @@ Signal<Connection> NetworkEngine::clientDisconnected;
 Signal<Connection, const std::string &> NetworkEngine::sentData;
 Signal<Connection, const std::string &> NetworkEngine::receivedData;
 Signal<Connection, const std::string &> NetworkEngine::broadcastData;
-
 Signal<Connection> NetworkEngine::receivedKeepalive;
 
 // Static slots definitions
@@ -115,16 +110,54 @@ void NetworkEngine::onDisconnect(Connection connection)
     broadcastData(std::move(connection), message);
 }
 
-void NetworkEngine::onReceiveKeepalive(Connection connection)
+void NetworkEngine::onSentData(Connection connection, const std::string &data)
 {
     std::string ip = getIP(connection);
     std::string port = std::to_string(getPort(connection));
-    Logger::log(LogLevel::Debug, "Receive keepalive from client @ " + ip + ':' + port);
+    std::string message = "Sent \"" + data + "\" to client @ " + ip + ':' + port;
+    Logger::log(LogLevel::Info, message);
+}
+
+void NetworkEngine::onReceivedData(Connection connection, const std::string &data)
+{
+    if (data[0] == '/')
+    {
+        //        auto commandSubsystem = dynamic_cast<CommandManager *>(Server::instance().subsystem("CommandManager"));
+        //        auto it = commandSubsystem->find(message);
+        //        if (it != commandSubsystem->end())
+        //        {
+        //            auto command = it->second.operator()();
+        //            command->execute(message);
+        //            delete command;
+        //        }
+
+        // CommandProcessor::receiveCommand(std::move(sender), message);
+    }
+    else if (data == "KEEPALIVE")
+    {
+        receivedKeepalive(std::move(connection));
+    }
+    else
+    {
+        std::string ip = getIP(connection);
+        std::string port = std::to_string(getPort(connection));
+        std::string message = "Client @ " + ip + ':' + port + ": \"" + data + '"';
+        Logger::log(LogLevel::Info, message);
+        broadcastData(std::move(connection), message);
+    }
+}
+
+void NetworkEngine::onReceivedKeepalive(Connection connection)
+{
+    std::string ip = getIP(connection);
+    std::string port = std::to_string(getPort(connection));
+    Logger::log(LogLevel::Debug, "Received keepalive from client @ " + ip + ':' + port);
 }
 
 NetworkEngine::~NetworkEngine()
 {
     // Stop and join the event loop
+    m_Active = false;
     g_NetworkEngineCV.notify_all();
 
     if (acceptorThread.joinable()) acceptorThread.join();     // Wait for acceptor coroutine to finish
@@ -136,14 +169,12 @@ NetworkEngine::~NetworkEngine()
 
     // Cleanup connections
     auto clients = g_ConnectionRegistry.view<ClientConnection>();
-
-    std::lock_guard lock(g_NetworkEngineMutex); // Protect access to m_Connections
     for (auto client : clients)
         disconnect(entityToFD(client));
 
     g_ConnectionRegistry.clear();
 
-    Logger::log(LogLevel::Info, "ConnectionEngine Stopped");
+    Logger::log(LogLevel::Info, "Network engine Stopped");
 }
 
 void NetworkEngine::init()
@@ -155,63 +186,41 @@ void NetworkEngine::init()
         Logger::log(LogLevel::Fatal, "WSAStartup failed");
 #endif
 
-    // 1. Create server connection
-    auto serverConnection = g_ConnectionRegistry.create();
-    g_ConnectionRegistry.emplace<ServerConnection>(serverConnection);
-    g_ConnectionRegistry.emplace<ServerInfo>(serverConnection);
-
-    // 2. Create file descriptor
-    SocketInfo socket {};
-    socket.fd = -1;
-    if ((socket.fd = createSocket()) == -1)
-    {
-        Logger::log(LogLevel::Error, "Failed to create socket");
-        g_ConnectionRegistry.destroy(serverConnection);
-        exit(EXIT_FAILURE);
-    }
-    Logger::log(LogLevel::Debug, "Created server socket: " + std::to_string(socket.fd));
-
-    // 3. Create server address
+    // Create the server connection
     int port = 8000;
-    if (!createServerAddress(socket.address, port))
+    Connection serverFD = createConnection(true, port);
+    if (serverFD == -1)
     {
-        Logger::log(LogLevel::Error, "Failed to create address");
-        g_ConnectionRegistry.destroy(serverConnection);
+        Logger::log(LogLevel::Fatal, "Failed to create server connection");
         exit(EXIT_FAILURE);
     }
-    Logger::log(LogLevel::Debug, "Successfully created server address (listening on all interfaces)");
+    Logger::log(LogLevel::Info, "Created server socket: " + std::to_string(serverFD));
 
-    // 4. Bind socket to address
-    if (!bindAddress(socket.fd, socket.address))
+    // Get the server entity from the file descriptor
+    auto serverEntity = fdToEntity(serverFD);
+
+    // Verify server entity has been set up correctly
+    if (!g_ConnectionRegistry.valid(serverEntity))
     {
-        Logger::log(LogLevel::Error, "Failed to bind address");
-        g_ConnectionRegistry.destroy(serverConnection);
-        g_ConnectionRegistry.destroy(serverConnection);
+        Logger::log(LogLevel::Fatal, "Server entity creation failed");
         exit(EXIT_FAILURE);
     }
-    g_ConnectionRegistry.emplace<SocketInfo>(serverConnection);
-    std::string ip = getIP(entityToFD(serverConnection));
-    Logger::log(LogLevel::Debug, "Successfully bound to address (" + ip + ':' + std::to_string(port) + ')');
 
-    // 5. Listen to incoming connections
-    if (!startListening(socket.fd))
-    {
-        Logger::log(LogLevel::Error, "Cannot listen to incoming connections");
-        g_ConnectionRegistry.destroy(serverConnection);
-        exit(EXIT_FAILURE);
-    }
-    Logger::log(LogLevel::Info, "Listening for new connections on " + ip + ':' + std::to_string(port) + ')');
+    // Log server initialization details
+    std::string ip = getIP(serverFD);
+    Logger::log(LogLevel::Info, "Server initialized and listening on " + ip + ':' + std::to_string(port));
 
-    g_ConnectionRegistry.emplace<Metrics>(serverConnection);
-
-    g_ServerConnection = entityToFD(serverConnection);
+    // Store server connection globally
+    g_ServerConnection = serverFD;
 
     // Connect the signals to slots
     clientAccepted.connect(onAccept);
     clientDisconnected.connect(onDisconnect);
-    broadcastData.connect(onReceiveBroadcast);
-    receivedKeepalive.connect(onReceiveKeepalive);
-    receivedData.connect(&MessageProcessor::processMessage);
+    sentData.connect(onSentData);
+    receivedData.connect(onReceivedData);
+    receivedKeepalive.connect(onReceivedKeepalive);
+    broadcastData.connect(onReceivedBroadcast);
+
     m_Initialized = true;
     m_Active = true;
 }
@@ -219,25 +228,27 @@ void NetworkEngine::init()
 void NetworkEngine::run()
 {
     // Start acceptor thread
-    acceptorThread = std::thread([this] {
-        Logger::log(LogLevel::Debug, "Started acceptor thread...");
+    acceptorThread = std::thread([this]
+    {
+        g_NetworkThreadBarrier.arrive_and_wait();
+
+        Logger::log(LogLevel::Info, "Started client acceptor thread");
         while (isActive())
         {
-            std::string message = "Waiting on clients to join... (currently: " + std::to_string(size()) + ')';
-            Logger::log(LogLevel::Debug, message);
             if (acceptClient())
                 g_NetworkEngineCV.notify_one(); // Notify the event thread
             std::this_thread::sleep_for(std::chrono::milliseconds(500));
         }
-        Logger::log(LogLevel::Debug, "(ConnectionSubsystem) Stopped acceptor thread");
     });
 
     // Start event thread
-    eventThread = std::thread([this] {
-        Logger::log(LogLevel::Debug, "Started event thread...");
+    eventThread = std::thread([this]
+    {
+        g_NetworkThreadBarrier.arrive_and_wait();
+
+        Logger::log(LogLevel::Info, "Started event thread");
         while (isActive())
         {
-            Logger::log(LogLevel::Debug, "Waiting on clients to do stuff...");
             std::unique_lock lock(g_NetworkThreadMutex);
             g_NetworkEngineCV.wait(lock, [this] {
                 return !isActive() || size() > 0;
@@ -249,31 +260,30 @@ void NetworkEngine::run()
             processConnections();
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
-        Logger::log(LogLevel::Debug, "(ConnectionSubsystem) Stopped event thread");
+        Logger::log(LogLevel::Info, "Stopped event thread");
     });
-    Logger::log(LogLevel::Info, "(ConnectionSubsystem) Started");
 }
 
-void NetworkEngine::onReceiveBroadcast(Connection sender, const std::string &data)
+void NetworkEngine::onReceivedBroadcast(Connection sender, const std::string &data)
 {
-    Logger::log(LogLevel::Debug, "Attempting to broadcast message...");
+    // Construct message
+    std::string ip  = getIP(sender);
+    int port = getPort(sender);
+    std::string body = "Client @ " + ip + ':' + std::to_string(port) + " sent: \"" + data + '"';
+    Message message(ip, port, body);
 
+    // Send message to all client other than the sender
     auto clientEnts = g_ConnectionRegistry.view<ClientConnection>();
     for (auto clientEnt : clientEnts)
     {
-        const auto client = entityToFD(clientEnt);
+        auto client = entityToFD(clientEnt);
         if (sender == client) continue; // Skip sender
 
-        std::string ip  = getIP(sender);
-        int port = getPort(sender);
-        Message message(ip, port, data);
-
         // Attempt to send data
-        if (sendData(client, message.toString()))
-            Logger::log(LogLevel::Debug, "Sent message to client @ " + ip + ':' + std::to_string(port));
-        else
-            Logger::log(LogLevel::Error, "Failed to send message to client @ " + ip + ':' + std::to_string(port));
+        sendData(client, message.content());
     }
+    Logger::log(LogLevel::Info, "Broadcast message from client @ " + ip + ':' + std::to_string(port) +
+                                 ": \"" + data + '"');
 }
 
 [[nodiscard]] Connection NetworkEngine::getServer()
@@ -283,7 +293,6 @@ void NetworkEngine::onReceiveBroadcast(Connection sender, const std::string &dat
 
 [[nodiscard]] std::vector<Connection> NetworkEngine::clients()
 {
-    std::lock_guard lock(g_NetworkEngineMutex);
     std::vector<Connection> connections;
     for (auto client : g_ConnectionRegistry.view<ClientConnection>())
         connections.emplace_back(entityToFD(client));
@@ -297,7 +306,6 @@ void NetworkEngine::onReceiveBroadcast(Connection sender, const std::string &dat
 
 [[nodiscard]] bool NetworkEngine::empty()
 {
-    std::lock_guard lock(g_NetworkEngineMutex);
     return g_ConnectionRegistry.view<ClientConnection>().empty();
 }
 
@@ -305,7 +313,6 @@ bool NetworkEngine::sendData(Connection sender, const std::string &data)
 {
     if (!isValid(sender)) [[unlikely]] return false;
 
-    std::lock_guard lock(g_NetworkEngineMutex);
     auto &socket = g_ConnectionRegistry.get<SocketInfo>(fdToEntity(sender));
     auto &metrics = g_ConnectionRegistry.get<Metrics>(fdToEntity(sender));
 
@@ -313,6 +320,7 @@ bool NetworkEngine::sendData(Connection sender, const std::string &data)
     if (socket.fd == -1 || data.empty()) [[unlikely]] return false;
 
     // Attempt to send data
+    std::unique_lock lock(g_NetworkEngineMutex);
     ssize_t bytesSent = send(socket.fd, data.c_str(), data.length(), 0);
     if (bytesSent == -1)
     {
@@ -324,27 +332,29 @@ bool NetworkEngine::sendData(Connection sender, const std::string &data)
         return false;
     }
     metrics.bytesSent += data.size();
+    lock.unlock();
 
     sentData(std::move(sender), data);
     return true;
 }
 
-
 std::string NetworkEngine::receiveData(Connection connection)
 {
     if (!isValid(connection) || !hasPendingData(connection)) [[unlikely]] return "";
 
-    std::lock_guard lock(g_NetworkEngineMutex);
     auto &socket = g_ConnectionRegistry.get<SocketInfo>(fdToEntity(connection));
 
+    std::unique_lock lock(g_NetworkEngineMutex);
     char buffer[1024] {};
     ssize_t bytesReceived = recv(socket.fd, buffer, sizeof(buffer), 0);
 
     if (bytesReceived == 0)
     {
         Logger::log(LogLevel::Info, "Connection closed by peer");
+        disconnect(connection);
         return "";
     }
+    lock.unlock();
 
     if (bytesReceived < 0)
     {
@@ -357,6 +367,7 @@ std::string NetworkEngine::receiveData(Connection connection)
     }
 
     // Update the last activity time if client connection
+    lock.lock();
     if (connection != g_ServerConnection) [[likely]]
     {
         auto &clientInfo = g_ConnectionRegistry.get<ClientInfo>(fdToEntity(connection));
@@ -365,6 +376,7 @@ std::string NetworkEngine::receiveData(Connection connection)
 
     auto &metrics = g_ConnectionRegistry.get<Metrics>(fdToEntity(connection));
     metrics.bytesReceived += bytesReceived;
+    lock.unlock();
 
     receivedData(std::move(connection), buffer);
     return std::string(buffer, bytesReceived);
@@ -374,10 +386,17 @@ bool NetworkEngine::disconnect(Connection client)
 {
     if (!isValid(client) || client == g_ServerConnection) [[unlikely]] return false;
 
-    std::lock_guard lock(g_NetworkEngineMutex);
-
     // Remove connection from registry
     clientDisconnected(std::move(client));
+
+    // Close client socket
+    if (getFD(client) != -1) [[unlikely]]
+#ifndef _WIN32
+        close(getFD(client));
+#else
+        closesocket(socket.fd);
+#endif
+
     g_ConnectionRegistry.destroy(fdToEntity(client));
     return true;
 }
@@ -386,9 +405,19 @@ bool NetworkEngine::disconnect(Connection client)
 {
     if (!isValid(client)) [[unlikely]] return false;
 
-    std::lock_guard lock(g_NetworkEngineMutex);
+    auto entity = fdToEntity(client);
+    if (entity == entt::null)
+    {
+        Logger::log(LogLevel::Error, "Invalid entity for client connection " + client);
+        return false;
+    }
+
     auto &socket = g_ConnectionRegistry.get<SocketInfo>(fdToEntity(client));
-    if (socket.fd == -1) return false;
+    if (socket.fd == -1)
+    {
+        Logger::log(LogLevel::Error, "Invalid file descriptor for client " + client);
+        return false;
+    }
 
     fd_set readFDs;
     FD_ZERO(&readFDs);
@@ -397,7 +426,8 @@ bool NetworkEngine::disconnect(Connection client)
     timeval timeout = {0, 0};
     int result = select(socket.fd + 1, &readFDs, nullptr, nullptr, &timeout);
 
-    return result > 0 && FD_ISSET(socket.fd, &readFDs);
+    if (result > 0 && FD_ISSET(socket.fd, &readFDs)) return true;
+    return false;
 }
 
 [[nodiscard]] long NetworkEngine::getFD(Connection connection)
@@ -410,9 +440,7 @@ bool NetworkEngine::disconnect(Connection client)
 {
     if (!isValid(connection)) [[unlikely]] return "";
 
-    std::lock_guard lock(g_NetworkEngineMutex);
     auto &socket = g_ConnectionRegistry.get<SocketInfo>(fdToEntity(connection));
-
     char ipStr[INET_ADDRSTRLEN];
     inet_ntop(AF_INET, &(socket.address.sin_addr), ipStr, INET_ADDRSTRLEN);
     return ipStr;
@@ -421,8 +449,6 @@ bool NetworkEngine::disconnect(Connection client)
 [[nodiscard]] int NetworkEngine::getPort(Connection connection)
 {
     if (!isValid(connection)) [[unlikely]] return -1;
-
-    std::lock_guard lock(g_NetworkEngineMutex);
     return ntohs(g_ConnectionRegistry.get<SocketInfo>(fdToEntity(connection)).address.sin_port);
 }
 
@@ -434,31 +460,32 @@ bool NetworkEngine::disconnect(Connection client)
     auto &clientInfo = g_ConnectionRegistry.get<ClientInfo>(fdToEntity(connection));
 
     auto currentTime = std::chrono::steady_clock::now();
-    return (currentTime - clientInfo.lastActivityTime) > std::chrono::seconds(timeout);
+    bool isActive = (currentTime - clientInfo.lastActivityTime) < std::chrono::seconds(timeout);
+    return isActive;
 }
 
 [[nodiscard]] bool NetworkEngine::isValidConnection(Connection connection)
 {
     if (!isValid(connection)) [[unlikely]] return false;
 
-    std::lock_guard lock(g_NetworkEngineMutex);
     auto &socket = g_ConnectionRegistry.get<SocketInfo>(fdToEntity(connection));
     if (socket.fd == -1) return false;
 
     char buffer[1];
     ssize_t result = recv(socket.fd, buffer, sizeof(buffer), MSG_PEEK);
 
-    if (result < 0)
-    {
+    if (result < 0) {
 #ifndef _WIN32
         if (errno == EAGAIN || errno == EWOULDBLOCK)
+        {
 #else
         if (WSAGetLastError() == WSAEWOULDBLOCK)
 #endif
             return true; // Non-blocking operation
+        }
         return false; // Other errors
     }
-    return result != 0; // Valid if data is available
+    return true; // Valid if data is available
 }
 
 void processConnectionsInternal(const std::function<bool(Connection)> &predicate)
@@ -468,11 +495,11 @@ void processConnectionsInternal(const std::function<bool(Connection)> &predicate
     std::vector<Connection> connectionsToPurge;
 
     auto clients = g_ConnectionRegistry.view<ClientConnection>();
-    for (auto client : clients)
+    for (auto client: clients)
         if (predicate(entityToFD(client)))
             connectionsToPurge.emplace_back(entityToFD(client));
 
-    for (auto client : connectionsToPurge)
+    for (auto client: connectionsToPurge)
         NetworkEngine::disconnect(client);
 
     // Notify the event thread
@@ -482,76 +509,119 @@ void processConnectionsInternal(const std::function<bool(Connection)> &predicate
 void validateConnections()
 {
     //Logger::log(LogLevel::DEBUG, "Validating connections...");
-    processConnectionsInternal([](Connection connection) {
+    processConnectionsInternal([](Connection connection)
+    {
         // Purge invalid or inactive connections
-        return !(NetworkEngine::isValidConnection(connection) && NetworkEngine::isActiveConnection(connection, 30));
+        bool isValid = NetworkEngine::isValidConnection(connection);
+        bool isActive = NetworkEngine::isActiveConnection(connection, 30);
+        return !(isValid && isActive);
     });
 }
 
 void processConnections()
 {
-    //Logger::log(LogLevel::DEBUG, "Processing connections...");
+    auto clientView = g_ConnectionRegistry.view<ClientConnection>();
 
     // Check and process connections with data
-    processConnectionsInternal([](Connection client) {
-        std::string message = NetworkEngine::receiveData(client);
-
-        // Purge if the message is empty ...
-        if (!NetworkEngine::hasPendingData(client) && message.empty())
-            return false;
-
-        if (!message.empty())
+    for (auto clientEntity : clientView)
+    {
+        // This way of checking if there is pending data is terrible
+        Connection client = entityToFD(clientEntity);
+        processConnectionsInternal([&](Connection)
         {
-            // Process message if it's valid
-            //Logger::log(LogLevel::DEBUG, "Processing message...");
-            MessageProcessor::processMessage(std::move(client), message);
-            return false; // Don't purge this connection
-        }
-        // Purge if no message is received and there is no pending data
-        return true;
-    });
+            std::string message = NetworkEngine::receiveData(client);
+
+            if (!NetworkEngine::hasPendingData(client) && message.empty())
+                return false; // Mark for purging
+
+            // Process message if received
+            if (!message.empty())
+            {
+                return false;
+            }
+            return false; // Purge if no message is received and there is no pending data
+        });
+    }
 }
 
-[[nodiscard]] Connection createConnection()
+[[nodiscard]] Connection createConnection(bool isServer, int port = 0)
 {
-    std::lock_guard lock(g_NetworkEngineMutex);
+    int fd = createAndConfigureSocket(isServer, port);
+    if (fd == -1)
+    {
+        Logger::log(LogLevel::Error, "Failed to create socket for connection");
+        return -1;
+    }
 
-    // 1. Check if a server connection has been created
-    if (g_ServerConnection == -1) [[unlikely]] return -1;
+    sockaddr_in clientAddress {}; // Can be empty for now
+    auto connection = createConnectionEntity(fd, clientAddress, isServer);
 
-    // 2. Check if the server is accepting connections (skip for now)
+    // For servers, just return the FD; no entity is needed
+    if (isServer && g_ServerConnection != -1)
+    {
+        g_ServerConnection = entityToFD(connection);
+        Logger::log(LogLevel::Info, "Server connection entity created");
+    }
+    return entityToFD(connection);
+}
 
-
-    // 3. Create entity
+[[nodiscard]] entt::entity createConnectionEntity(int fd, sockaddr_in clientAddress, bool isServer = false)
+{
+    // Create entity
     auto connection = g_ConnectionRegistry.create();
 
-    // 4. Create the socket
-    int fd = socket(AF_INET, SOCK_STREAM, 0);
-    if (fd >= 0)
+    if (isServer && g_ServerConnection != -1)
     {
-        // Set to non-blocking mode, then return true if that works
-#ifndef _WIN32
-        int flags = fcntl(fd, F_GETFL, 0);
-        if (flags == -1 || fcntl(fd, F_SETFL, flags | O_NONBLOCK) == -1)
-        {
-            Logger::log(LogLevel::Error, "Failed to to set socket to non-blocking mode");
-            close(fd);
-            return -1;
-        }
-#else
-        u_long mode = 1; // 1 = non-blocking
-        if (ioctlsocket(m_FD, FIONBIO, &mode) != 0)
-        {
-            Logger::log(LogLevel::Error, "Failed to to set socket to non-blocking mode");
-            close(fd);
-            return -1;
-        }
-#endif
-        // Enable keepalive
-        int enableKeepalive = 1;
-        setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &enableKeepalive, sizeof(enableKeepalive));
+        g_ConnectionRegistry.emplace<ServerConnection>(connection);
+        g_ConnectionRegistry.emplace<ServerInfo>(connection);
     }
     else
+    {
+        g_ConnectionRegistry.emplace<ClientConnection>(connection);
+        g_ConnectionRegistry.emplace<ClientInfo>(connection);
+    }
+    g_ConnectionRegistry.emplace<SocketInfo>(connection, fd, clientAddress);
+    g_ConnectionRegistry.emplace<Metrics>(connection);
+
+    return connection;
+}
+
+// Accepts a client and returns a Connection ID if successful
+bool acceptClient()
+{
+    sockaddr_in clientAddress {};
+    socklen_t clientAddressLength = sizeof(clientAddress);
+
+    auto serverFD = NetworkEngine::getFD(g_ServerConnection);
+    int clientFD = accept(serverFD, reinterpret_cast<sockaddr *>(&clientAddress), &clientAddressLength);
+    if (clientFD == -1) return false;
+
+    // Set client FD to non-blocking
+#ifndef _WIN32
+    int flags = fcntl(clientFD, F_GETFL, 0);
+    if (flags == -1 || fcntl(clientFD, F_SETFL, flags | O_NONBLOCK) == -1)
+    {
+#else
+    u_long mode = 1; // 1 = non-blocking
+    if (ioctlsocket(clientFD, FIONBIO, &mode) != 0)
+    {
+#endif
+        Logger::log(LogLevel::Error, "Failed to set client FD to non-blocking mode");
+        close(clientFD);
+        return false;
+    }
+
+    // Create connection entity
+    auto client = createConnectionEntity(clientFD, clientAddress);
+
+    NetworkEngine::clientAccepted(entityToFD(client));
+    return true;
+}
+
+[[nodiscard]] int createAndConfigureSocket(bool isServer, int port = 0)
+{
+    int fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (fd < 0)
     {
 #ifndef _WIN32
         Logger::log(LogLevel::Error, "Socket creation failed: " + std::string(strerror(errno)));
@@ -561,32 +631,60 @@ void processConnections()
         return -1;
     }
 
-    // 5. Add components to connection
-    g_ConnectionRegistry.emplace<ClientConnection>(connection);
-    g_ConnectionRegistry.emplace<ClientInfo>(connection);
-    g_ConnectionRegistry.emplace<SocketInfo>(connection);
-    g_ConnectionRegistry.emplace<Metrics>(connection);
-
-    // 6. Bind destroy function to connection
-    // if (!g_Registry.on_destroy<SocketInfo>().connect<onDestroyFunction>(connection))
-    // {
-    //     Logger::log(LogLevel::Error, "Failed to bind destroy function to connection");
-    //     g_Registry.destroy(connection);
-    //     return -1;
-    // }
-    return entityToFD(connection);
-}
-
-// Any time a connection is destroyed, this is called (acts as a destructor)
-void onDestroyFunction(const SocketInfo &socket)
-{
-    // Close socket
-    if (socket.fd != -1) [[unlikely]]
+    // Set to non-blocking mode
 #ifndef _WIN32
-        close(socket.fd);
+    int flags = fcntl(fd, F_GETFL, 0);
+    if (flags == -1 || fcntl(fd, F_SETFL, flags | O_NONBLOCK) == -1)
+    {
 #else
-    closesocket(socket.fd);
+    u_long mode = 1; // 1 = non-blocking
+    if (ioctlsocket(fd, FIONBIO, &mode) != 0)
+    {
 #endif
+        Logger::log(LogLevel::Error, "Failed to set socket to non-blocking mode");
+        close(fd);
+        return -1;
+    }
+
+    // Enable keepalive
+    int enableKeepalive = 1;
+    setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &enableKeepalive, sizeof(enableKeepalive));
+
+    if (isServer)
+    {
+        // Configure server-specific settings
+        sockaddr_in serverAddress {};
+        if (!createServerAddress(serverAddress, port))
+        {
+            Logger::log(LogLevel::Error, "Failed to create server address");
+            close(fd);
+            return -1;
+        }
+
+        if (!bindAddress(fd, serverAddress))
+        {
+#ifndef _WIN32
+            Logger::log(LogLevel::Error, "Bind failed: " + std::string(strerror(errno)));
+#else
+            Logger::log(LogLevel::Error, "Bind failed: " + std::to_string(WSAGetLastError()));
+#endif
+            close(fd);
+            return -1;
+        }
+
+        if (!startListening(fd))
+        {
+#ifndef _WIN32
+            Logger::log(LogLevel::Error, "Listen failed: " + std::string(strerror(errno)));
+#else
+            Logger::log(LogLevel::Error, "Listen failed: " + std::to_string(WSAGetLastError()));
+#endif
+            close(fd);
+            return -1;
+        }
+        Logger::log(LogLevel::Info, "Server socket configured to listen on port " + std::to_string(port));
+    }
+    return fd;
 }
 
 // Creates an object
@@ -620,40 +718,13 @@ inline bool startListening(int serverFD)
     return false;
 }
 
-// Accepts a client and returns a Connection ID if successful
-bool acceptClient()
-{
-    std::string message = "Waiting on new connections...";
-    Logger::log(LogLevel::Debug, message);
-
-    sockaddr_in clientAddress {};
-    socklen_t clientAddressLength = sizeof(clientAddress);
-
-    auto serverFD = NetworkEngine::getFD(g_ServerConnection);
-    int clientFD = accept(serverFD, reinterpret_cast<sockaddr *>(&clientAddress), &clientAddressLength); // TODO issue here
-    if (clientFD == -1) return false;
-
-    message = "Attempted to accept a new connection...";
-    Logger::log(LogLevel::Debug, message);
-
-    const auto client = g_ConnectionRegistry.create();
-
-    g_ConnectionRegistry.emplace<ClientConnection>(client);
-    g_ConnectionRegistry.emplace<ClientInfo>(client);
-    g_ConnectionRegistry.emplace<SocketInfo>(client, clientFD, clientAddress);
-    g_ConnectionRegistry.emplace<Metrics>(client);
-
-    NetworkEngine::clientAccepted(entityToFD(client));
-    return true;
-}
-
 // Returns the file descriptor of a specified entity
 inline Connection entityToFD(entt::entity entity)
 {
     return g_ConnectionRegistry.get<SocketInfo>(entity).fd;
 }
 
-inline entt::entity fdToEntity(Connection connection)
+entt::entity fdToEntity(Connection connection)
 {
     for (const entt::entity ent : g_ConnectionRegistry.view<SocketInfo>())
         if (g_ConnectionRegistry.get<SocketInfo>(ent).fd == connection)
@@ -664,5 +735,6 @@ inline entt::entity fdToEntity(Connection connection)
 // Checks if a connection is valid
 inline bool isValid(Connection connection)
 {
-    return g_ConnectionRegistry.valid(fdToEntity(connection));
+    entt::entity connectionEntity = fdToEntity(connection);
+    return g_ConnectionRegistry.valid(connectionEntity) && g_ConnectionRegistry.get<SocketInfo>(connectionEntity).fd != -1;
 }

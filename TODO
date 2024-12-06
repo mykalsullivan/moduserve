@@ -23,3 +23,5 @@
 
 - Move the registry inside NetworkEngine outside of it to be used globally (maybe)
 - CHANGE THE NAME FROM XServer TO SOMETHING LESS, WELL, ALREADY USED AND BAD.
+
+- Consolidate most of the functions in NetworkEngine.cpp because they are all over the place.
