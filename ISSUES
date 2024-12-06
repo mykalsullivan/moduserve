@@ -1,4 +1,2 @@
 - Command registration doesn't work
 - The server port should be random if not specified by the user upon startup
-- You can no longer specify the server port upon startup
-- The logger needs to display which module is sending the log message
