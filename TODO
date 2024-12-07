@@ -21,3 +21,5 @@
 - Allow the server to start as a daemon (but don't let the user start it as a daemon after it has already been started)
 - Create a derived class from ServerModule that will encapsulate service-specific functionality
   (AKA the NetworkEngine, which needs to be started and stopped)
+- Create an SSL module to encrypt communication
+    - This will require there to be

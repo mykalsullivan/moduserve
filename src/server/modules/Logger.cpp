@@ -13,7 +13,6 @@ std::string logLevelToString(LogLevel);
 Logger::~Logger() = default;
 
 void Logger::init() {}
-void Logger::run() {}
 
 void Logger::log(LogLevel level, const std::string &message)
 {
@@ -51,7 +50,7 @@ std::string getCurrentTimestamp()
     std::tm tm = *std::localtime(&timePoint);
 
     std::ostringstream timestampStream;
-    timestampStream << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
+    timestampStream << std::put_time(&tm, "%d-%m-%Y %H:%M:%S");
     return timestampStream.str();
 }
 
@@ -59,11 +58,11 @@ std::string logLevelToString(LogLevel level)
 {
     switch (level)
     {
-        case LogLevel::Debug: return "DEBUG";
-        case LogLevel::Info: return "INFO";
-        case LogLevel::Warning: return "WARNING";
-        case LogLevel::Error: return "ERROR";
-        case LogLevel::Fatal: return "FATAL";
-        default: return "UNKNOWN";
+        case LogLevel::Debug: return "Debug";
+        case LogLevel::Info: return "Info";
+        case LogLevel::Warning: return "Warning";
+        case LogLevel::Error: return "Error";
+        case LogLevel::Fatal: return "Fatal";
+        default: return "Unknown";
     }
 }

@@ -19,7 +19,6 @@ public slots:
 public:
     ~BFModule() override;
     void init() override;
-    void run() override;
     [[nodiscard]] std::vector<std::type_index> requiredDependencies() const override { return {}; };
     [[nodiscard]] std::vector<std::type_index> optionalDependencies() const override { return {}; }
 };

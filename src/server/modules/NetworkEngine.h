@@ -13,7 +13,7 @@ struct ClientInfo;
 struct SocketInfo;
 struct Metrics;
 
-class NetworkEngine : public ServerModule {
+class NetworkEngine : public ServerBackgroundService {
 public signals:
     static Signal<> started;
     static Signal<> shutdown;
@@ -41,7 +41,7 @@ public:
     [[nodiscard]] std::vector<std::type_index> requiredDependencies() const override { return {}; }
     [[nodiscard]] std::vector<std::type_index> optionalDependencies() const override { return {}; }
 
-    static Connection getServer();
+    static Connection getServerConnection();
     static std::vector<Connection> clients();
     static size_t size();
     static bool empty();

@@ -1,5 +1,5 @@
 add_library(UserSubsystem STATIC
-        UserModule.cpp
+        ../UserModule.cpp
         UserAuthenticationModule.cpp
         UserManager.cpp
 )

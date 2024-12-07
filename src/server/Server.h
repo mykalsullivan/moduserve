@@ -7,8 +7,6 @@
 #include "CommandManager.h"
 #include <atomic>
 
-int main(int argc, char **argv);
-
 class Server {
 public signals:
     // Activated upon initialization
@@ -86,18 +84,6 @@ public:
         auto module = ModuleManager::instance().getModule<T>();
         return module ? true : false;
     }
-
-    // Adds a server command
-    template<typename T, typename... Args>
-    static void addCommand(Args &&... args);
-
-    // Retrieves a server command by name
-    template<typename T>
-    static std::shared_ptr<T> getCommand();
-
-    // Retrieve all the server commands tied to a server module
-    template<typename T>
-    static bool hasCommand();
 
 private:
     // Daemonizes the server

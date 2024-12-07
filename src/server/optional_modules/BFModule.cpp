@@ -36,8 +36,6 @@ void BFModule::init()
     receivedCode.connect(executeCode);
 }
 
-void BFModule::run() {}
-
 void BFModule::executeCode(Connection connection, const std::string &code)
 {
     std::string output;

@@ -15,9 +15,8 @@ enum class LogLevel {
 
 class Logger : public ServerModule {
 public:
-    virtual ~Logger();
+    ~Logger() override;
     void init() override;
-    void run() override;
     std::vector<std::type_index> requiredDependencies() const override { return {}; };
     std::vector<std::type_index> optionalDependencies() const override { return {}; };
 

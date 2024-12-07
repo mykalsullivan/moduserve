@@ -11,7 +11,12 @@
 #include <filesystem>
 
 // Forward declaration(s)
-void printUsage();
+void printUsage()
+{
+    std::cout << "Usage: program [-p port]" << std::endl;
+    std::cout << "  -p port        Specify the port number" << std::endl;
+    std::cout << "  -h             Display this help message" << std::endl;
+}
 
 // Static variables
 std::string g_WorkingDirectory;
@@ -21,33 +26,6 @@ std::condition_variable g_ServerCV;
 int init(int, char **);
 
 Server::Server() : m_Running(false), m_Daemonized(false) {}
-
-int Server::run(int argc, char **argv)
-{
-    int initResult = init(argc, argv);
-    if (initResult != 0) return initResult;
-
-    m_Running = true;
-
-    std::unique_lock lock(g_ServerMutex);
-    g_ServerCV.wait(lock, [this] {
-        return !m_Running;
-    });
-    return 0;
-}
-
-// This will need to notify all the sub-processes to stop because they will be detached from the main server thread
-void Server::stop()
-{
-    m_Running = false;
-    g_ServerCV.notify_one();
-    Logger::log(LogLevel::Info, "Server shutting down...");
-}
-
-void Server::daemonize()
-{
-    // Do nothing for now
-}
 
 int init(int argc, char **argv)
 {
@@ -87,13 +65,34 @@ int init(int argc, char **argv)
     ModuleManager::instance().registerModule<Logger>();
     ModuleManager::instance().registerModule<NetworkEngine>(port);
     ModuleManager::instance().initializeModules();
-    ModuleManager::instance().startModules();
+    ModuleManager::instance().startBackgroundServices();
     return 0;
 }
 
-void printUsage()
+int Server::run(int argc, char **argv)
 {
-    std::cout << "Usage: program [-p port]" << std::endl;
-    std::cout << "  -p port        Specify the port number" << std::endl;
-    std::cout << "  -h             Display this help message" << std::endl;
+    int initResult = init(argc, argv);
+    if (initResult != 0) return initResult;
+
+    m_Running = true;
+
+    std::unique_lock lock(g_ServerMutex);
+    g_ServerCV.wait(lock, [this]
+    {
+        return !m_Running;
+    });
+    return 0;
+}
+
+// This will need to notify all the sub-processes to stop because they will be detached from the main server thread
+void Server::stop()
+{
+    m_Running = false;
+    g_ServerCV.notify_one();
+    Logger::log(LogLevel::Info, "Server shutting down...");
+}
+
+void Server::daemonize()
+{
+    // Do nothing for now
 }
