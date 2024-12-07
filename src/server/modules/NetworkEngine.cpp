@@ -141,7 +141,7 @@ void NetworkEngine::processMessage(Connection connection, const std::string &dat
 
     while (ss >> arg) args.emplace_back(arg);
 
-    if (args[0] == "COMMAND")
+    if (args[0] == "EXEC")
     {
         if (args.size() > 2)
         {
@@ -176,7 +176,7 @@ void NetworkEngine::processMessage(Connection connection, const std::string &dat
         else
             Logger::log(LogLevel::Debug, "Invalid number of arguments");
     }
-    else if (args[0] == "BROADCAST")
+    else if (args[0] == "SAY_ALL")
     {
         std::string message;
 

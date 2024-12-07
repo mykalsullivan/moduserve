@@ -1,8 +1,13 @@
 ### Priority ###
 - Move the registry inside NetworkEngine outside of it to be used globally (maybe)
 - Encapsulate messages in a Message object
-- The logger should allow you to specify the sender of the log message
+- The logger should allow you to specify the sender (ServerModule) of the log message
 - Dynamic command loading
+- Use pImpl idiom for Server class
+- Make a virtual ServerModule::create() method instead of all the static stuff going on (maybe). See what other alternatives you can come up with first before you make any decisions that might introduce a lot of refactoring.
+- Create a moduserve namespace.
+- Create a function will allow you to enable or disable logs for a specific module (make it a virtual method inside ServerModule)
+- Create functions for converting files to and from JSON format
 
 ### Extra ###
 - Allow the user to enable debug logging with a switch upon startup
@@ -13,3 +18,5 @@
 - Connection handshake (ensuring correct protocol version, application version, name of program, etc)
 - Config file loading (JSON)
 - Allow the server to start as a daemon (but don't let the user start it as a daemon after it has already been started)
+- Create a derived class from ServerModule that will encapsulate service-specific functionality
+  (AKA the NetworkEngine, which needs to be started and stopped)
