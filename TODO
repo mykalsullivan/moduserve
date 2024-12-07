@@ -8,6 +8,7 @@
 - Create a moduserve namespace.
 - Create a function will allow you to enable or disable logs for a specific module (make it a virtual method inside ServerModule)
 - Create functions for converting files to and from JSON format
+- Make the server select a random available port upon startup if it is not specified by the user
 
 ### Extra ###
 - Allow the user to enable debug logging with a switch upon startup

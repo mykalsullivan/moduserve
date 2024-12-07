@@ -1,4 +1,4 @@
-add_library(BFModule
+add_library(BFModule SHARED
         BFModule.cpp
 )
 
@@ -6,7 +6,7 @@ target_link_libraries(BFModule PUBLIC
         moduserveCommon
 )
 
-add_library(DatabaseEngine
+add_library(DatabaseEngine SHARED
         DatabaseEngine.cpp
 )
 

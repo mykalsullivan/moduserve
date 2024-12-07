@@ -1,4 +1,4 @@
-add_library(Commands STATIC
+add_library(Commands SHARED
         CommandRegistry.cpp
 )
 

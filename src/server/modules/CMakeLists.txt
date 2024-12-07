@@ -1,4 +1,4 @@
-add_library(Modules STATIC
+add_library(Modules SHARED
         NetworkEngine.cpp
         Logger.cpp
 )

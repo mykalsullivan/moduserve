@@ -1,5 +1,5 @@
 # Create a static library for the common code
-add_library(moduserveCommon STATIC
+add_library(moduserveCommon SHARED
         PCH.cpp
         Message.cpp
 )
