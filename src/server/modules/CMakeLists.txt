@@ -4,6 +4,8 @@ add_library(Modules SHARED
         Logger.cpp
         CommandProcessor.h
         CommandProcessor.cpp
+        ../optional_modules/FilesystemManager.h
+        ../optional_modules/FilesystemManager.cpp
 )
 
 target_link_libraries(Modules PUBLIC

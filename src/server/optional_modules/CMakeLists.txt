@@ -13,3 +13,11 @@ add_library(DatabaseEngine SHARED
 target_link_libraries(DatabaseEngine PUBLIC
         moduserveCommon
 )
+
+add_library(FilesystemManager SHARED
+        FilesystemManager.cpp
+)
+
+target_link_libraries(FilesystemManager PUBLIC
+        moduserveCommon
+)
