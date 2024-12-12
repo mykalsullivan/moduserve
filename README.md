@@ -1,2 +1,4 @@
-# moduserve
- A modular server program which is meant to be molded to your needs.
+# Moduserve
+ A modular server program meant to fit your needs, whatever they are.
+
+## Improved description: *coming soon...*
