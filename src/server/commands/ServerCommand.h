@@ -4,17 +4,20 @@
 
 #pragma once
 #include <string>
+#include <vector>
 #include <any>
 
 class ServerCommand {
 protected:
-    std::string m_Action;
+    std::string m_Name;
+    std::string m_Usage;
     std::vector<std::any> m_Args;
+
 public:
     virtual ~ServerCommand() = default;
-    virtual void execute() = 0;
-    [[nodiscard]] constexpr virtual std::string name() const = 0;
-    [[nodiscard]] constexpr virtual std::string usage() const = 0;
+    virtual void execute(const std::string &args) = 0;
+    [[nodiscard]] constexpr std::string name() const { return m_Name; }
+    [[nodiscard]] constexpr std::string usage() const { return m_Usage; }
 };
 
 // TODO

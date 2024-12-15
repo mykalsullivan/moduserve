@@ -5,8 +5,8 @@
 #include "Server.h"
 #include "common/PCH.h"
 #include "ModuleManager.h"
-#include "modules/NetworkEngine.h"
-#include "modules/Logger.h"
+#include "modules/logger/Logger.h"
+#include "modules/networkengine/NetworkEngine.h"
 #include <getopt.h>
 #include <filesystem>
 

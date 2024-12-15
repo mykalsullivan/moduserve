@@ -11,10 +11,11 @@
 #include <fcntl.h>
 #include <entt/entt.hpp>
 
-#include "server/modules/Logger.h"
+#include "server/modules/logger/Logger.h"
 
 // Temp
-#include "server/optional_modules/BFModule.h"
+#include "server/modules/commandprocessor/CommandProcessor.h"
+#include "server/optional_modules/bf/BFModule.h"
 
 #ifndef _WIN32
 #include <arpa/inet.h>
@@ -94,34 +95,15 @@ void NetworkEngine::processMessage(Connection connection, const std::string &dat
     std::istringstream ss(data);
     std::string arg;
     std::vector<std::string> args;
-
     while (ss >> arg) args.emplace_back(arg);
 
     if (args[0] == "EXEC")
     {
-        if (args.size() > 2)
-        {
-            // This should parse the command arguments and pass them into the command
-            if (args[1] == "bf")
-            {
-                if (args.size() > 3)
-                {
-                    if (args[2] == "execute")
-                        BFModule::receivedCode(std::move(connection), args[3]);
-                    else if (args[2] == "retrieve_pointer_address")
-                        BFModule::retrieveCurrentPointerAddress(connection);
-                    else if (args[2] == "retrieve_pointer_value")
-                        BFModule::retrieveCurrentPointerValue(connection);
-                    else if (args[2] == "retrieve_tape_values")
-                        BFModule::retrieveTapeValues(connection, std::stoi(args[3]), std::stoi(args[4]));
-                }
-            }
-            else
-                // Print usage information for the command
-                sendData(std::move(connection), "Missing command arguments");
-        }
-        else
-            sendData(std::move(connection), "Please specify a command");
+		// Remove the protocol command
+		args.erase(args.begin());
+
+        // Pass the rest of the arguments to the command processor
+        CommandProcessor::execute(args);
     }
     else if (args[0] == "SAY")
     {
@@ -136,7 +118,7 @@ void NetworkEngine::processMessage(Connection connection, const std::string &dat
     {
         std::string message;
 
-        for (auto i = 0; i < args.size(); i++)
+        for (u_long i = 0; i < args.size(); i++)
         {
             if (i == args.size()) continue;
             message += args[i] + ' ';

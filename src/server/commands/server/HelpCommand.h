@@ -3,12 +3,11 @@
 //
 
 #pragma once
-#include "../Command.h"
+#include "../ServerCommand.h"
 
-class HelpCommand : public Command {
+class HelpCommand : public ServerCommand {
 public:
+    HelpCommand();
     ~HelpCommand() override = default;
     void execute(const std::string &args) override;
-    [[nodiscard]] constexpr std::string name() const override { return "help"; }
-    [[nodiscard]] std::string usage() const override;
 };

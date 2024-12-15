@@ -9,6 +9,7 @@
 - Create a function will allow you to enable or disable logs for a specific module (make it a virtual method inside ServerModule)
 - Create functions for converting files to and from JSON format
 - Make the server select a random available port upon startup if it is not specified by the user
+- The CommandProcessor needs to be able to look up a command by name (looking commands up by type does not work, sadly :( )
 
 ### Extra ###
 - Allow the user to enable debug logging with a switch upon startup
@@ -22,4 +23,5 @@
 - Create a derived class from ServerModule that will encapsulate service-specific functionality
   (AKA the NetworkEngine, which needs to be started and stopped)
 - Create an SSL module to encrypt communication
-    - This will require there to be
+    - This will require there to be... (I forgot to add stuff here. It'll come back to me one day.)
+- There needs to be a "NetworkCommand" or "ProtocolCommand" or something

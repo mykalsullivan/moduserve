@@ -3,7 +3,7 @@
 //
 
 #pragma once
-#include "ServerModule.h"
+#include "server/modules/ServerModule.h"
 
 /* Components */
 struct ServerConnection;

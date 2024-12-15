@@ -11,7 +11,7 @@
 #include <netinet/in.h>
 #include <entt/entt.hpp>
 
-#include "Logger.h"
+#include "server/modules/logger/Logger.h"
 
 // Forward declaration(s)
 struct ServerConnection {};

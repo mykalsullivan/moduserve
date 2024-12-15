@@ -22,6 +22,7 @@ public:
         return instance;
     }
 
+    // Register a module
     template<typename T, typename... Args>
     void registerModule(Args &&... args)
     {

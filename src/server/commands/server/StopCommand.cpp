@@ -4,17 +4,15 @@
 
 #include "StopCommand.h"
 
+StopCommand::StopCommand() : m_Name("stop")
+{}
+
 void StopCommand::execute(const std::string &args)
 {
 
 }
 
-std::string StopCommand::usage() const
-{
-    return "stop - Stops the server";
-}
-
-extern "C" Command *importCommand()
+extern "C" ServerCommand *importCommand()
 {
     return new StopCommand();
 }

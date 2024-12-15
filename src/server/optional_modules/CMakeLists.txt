@@ -1,6 +1,6 @@
 # Build and link DatabaseEngine
 add_library(DatabaseEngine SHARED
-        DatabaseEngine.cpp
+        databaseengine/DatabaseEngine.cpp
 )
 target_link_libraries(DatabaseEngine PUBLIC
         moduserveCommon
@@ -8,7 +8,7 @@ target_link_libraries(DatabaseEngine PUBLIC
 
 # Build and link FilesystemModule
 add_library(FilesystemManager SHARED
-        FilesystemModule.cpp
+        filesystem/FilesystemModule.cpp
 )
 target_link_libraries(FilesystemManager PUBLIC
         moduserveCommon
@@ -16,7 +16,7 @@ target_link_libraries(FilesystemManager PUBLIC
 
 # Build and link SSLModule
 add_library(SSLModule SHARED
-        SSLModule.cpp
+        ssl/SSLModule.cpp
 )
 target_link_libraries(SSLModule PUBLIC
         moduserveCommon
@@ -25,8 +25,8 @@ target_link_libraries(SSLModule PUBLIC
 ### EXTRA STUFF ###
 # Build and link BFModule
 add_library(BFModule SHARED
-        BFModule.cpp
-        SSLModule.h
+        bf/BFModule.cpp
+        ssl/SSLModule.h
 )
 target_link_libraries(BFModule PUBLIC
         moduserveCommon

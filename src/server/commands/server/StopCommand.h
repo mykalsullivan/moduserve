@@ -3,12 +3,11 @@
 //
 
 #pragma once
-#include "../Command.h"
+#include "../ServerCommand.h"
 
-class StopCommand : public Command {
+class StopCommand : public ServerCommand {
 public:
+    StopCommand();
     ~StopCommand() override = default;
     void execute(const std::string &args) override;
-    [[nodiscard]] constexpr std::string name() const override { return "stop"; }
-    [[nodiscard]] std::string usage() const override;
 };
