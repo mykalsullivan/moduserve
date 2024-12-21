@@ -22,5 +22,5 @@ public:
 
     static void registerCommand(std::shared_ptr<ServerCommand>);
     static void loadCommandFromLib(const std::string &);
-   	static void execute(std::vector<std::string> &);
+   	static void execute(const std::vector<std::string> &);
 };

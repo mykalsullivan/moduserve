@@ -67,9 +67,9 @@ void CommandProcessor::loadCommandFromLib(const std::string &libPath)
     Logger::log(LogLevel::Info, "Loaded command: \"" + commandName + '\"');
 }
 
-void CommandProcessor::execute(std::vector<std::string> &input)
+void CommandProcessor::execute(const std::vector<std::string> &args)
 {
-	auto &commandName = input[0];
+	auto &commandName = args[0];
 
 //        if (args.size() > 2)
 //        {
@@ -95,5 +95,9 @@ void CommandProcessor::execute(std::vector<std::string> &input)
 //        else
 //            sendData(std::move(connection), "Please specify a command");
 
+	// 1. Determine and retrive the command to execute
+    auto command = CommandManager::instance().getCommand(args[0]);
 
+   	// 2. Execute the command by passing the remaining arguments into it
+    command->execute(args);
 }
