@@ -15,7 +15,7 @@ protected:
 
 public:
     virtual ~ServerCommand() = default;
-    virtual void execute(const std::vector<std::string> &args) = 0;
+    virtual void execute([[maybe_unused]] const std::vector<std::string> &args) = 0;
     [[nodiscard]] constexpr std::string name() const { return m_Name; }
     [[nodiscard]] constexpr std::string usage() const { return m_Usage; }
 };

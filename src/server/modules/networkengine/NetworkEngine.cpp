@@ -129,7 +129,7 @@ void NetworkEngine::processMessage(Connection connection, const std::string &dat
         receivedKeepalive(std::move(connection));
     else
     {
-        std::string message = "Invalid command \"" + data + '"';
+        std::string message = "Received invalid data: \"" + data + '"';
         sendData(std::move(connection), message);
     }
 }
@@ -141,7 +141,7 @@ void NetworkEngine::onReceivedKeepalive(Connection connection)
     Logger::log(LogLevel::Debug, "Received keepalive from client @ " + ip + ':' + port);
 }
 
-NetworkEngine::NetworkEngine(int port = 7035)
+NetworkEngine::NetworkEngine(int port)
 {
     g_Port = port;
 }

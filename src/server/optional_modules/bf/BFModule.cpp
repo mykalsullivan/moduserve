@@ -5,8 +5,8 @@
 #include "BFModule.h"
 #include <sstream>
 
-#include "server/modules/Logger.h"
-#include "server/modules/NetworkEngine.h"
+#include "server/modules/logger/Logger.h"
+#include "server/modules/networkengine/NetworkEngine.h"
 
 static unsigned int m_Tape[4096] {};
 static int m_Ptr = 0;

@@ -7,8 +7,9 @@ add_executable(moduserveServer
 # Link dependencies to the server executable
 target_link_libraries(moduserveServer
         moduserveCommon
-        Modules
-        Commands
+        Logger
+        NetworkEngine
+        CommandProcessor
         BFModule
 )
 

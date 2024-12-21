@@ -34,7 +34,7 @@ public slots:
     static void processMessage(Connection connection, const std::string &);
 
 public:
-  	explicit NetworkEngine(int port);
+  	explicit NetworkEngine(int port = 7035);
     ~NetworkEngine() override;
     void init() override;
     void run() override;
