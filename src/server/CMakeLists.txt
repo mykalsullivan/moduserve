@@ -11,6 +11,7 @@ target_link_libraries(moduserveServer
         NetworkEngine
         CommandProcessor
         BFModule
+        ServerCommands
 )
 
 #target_link_libraries(XServerCommon PRIVATE

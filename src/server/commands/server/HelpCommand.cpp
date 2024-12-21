@@ -15,7 +15,7 @@ void HelpCommand::execute(const std::string &args)
 
 }
 
-extern "C" ServerCommand *importCommand()
-{
-    return new HelpCommand();
-}
+// extern "C" ServerCommand *importCommand()
+// {
+//     return new HelpCommand();
+// }

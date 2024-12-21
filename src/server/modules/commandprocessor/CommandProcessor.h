@@ -9,10 +9,12 @@
 
 class CommandProcessor : public ServerModule {
 public signals:
-    static Signal<ServerCommand> commandAdded;
+    static Signal<const std::string &> commandAdded;
+    static Signal<Connection, const std::string &> receivedInvalidCommand;
 
 public slots:
-    static void onCommandAdded(ServerCommand &command);
+    static void onCommandAdded(const std::string &commandName);
+    static void onReceivedInvalidCommand(Connection connection, const std::string &);
 
 public:
     ~CommandProcessor() override = default;
@@ -22,5 +24,7 @@ public:
 
     static void registerCommand(std::shared_ptr<ServerCommand>);
     static void loadCommandFromLib(const std::string &);
-   	static void execute(const std::vector<std::string> &);
+    static std::vector<std::string> stringToVec(const std::string &);
+    static std::string vecToString(const std::vector<std::string> &);
+   	static void execute(Connection connection, const std::string &);
 };

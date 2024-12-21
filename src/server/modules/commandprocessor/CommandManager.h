@@ -4,7 +4,6 @@
 
 #pragma once
 #include <server/commands/ServerCommand.h>
-#include <server/commands/server/NullCommand.h>
 #include <unordered_map>
 #include <memory>
 #include <mutex>
@@ -33,7 +32,7 @@ public:
     std::shared_ptr<ServerCommand> getCommand(const std::string &commandName)
     {
         std::lock_guard lock(m_Mutex);
-        return hasCommand(commandName) ? m_Commands[commandName] : std::make_shared<NullCommand>();
+        return hasCommand(commandName) ? m_Commands[commandName] : nullptr;
     }
 
     // Returns true if the command is loaded

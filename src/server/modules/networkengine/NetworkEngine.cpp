@@ -92,36 +92,39 @@ void NetworkEngine::onReceivedData(Connection connection, const std::string &dat
 
 void NetworkEngine::processMessage(Connection connection, const std::string &data)
 {
-    std::istringstream ss(data);
-    std::string arg;
-    std::vector<std::string> args;
-    while (ss >> arg) args.emplace_back(arg);
-
-    if (args[0] == "EXEC")
+    auto parsedData = CommandProcessor::stringToVec(data);
+    
+    if (parsedData[0] == "EXEC")
     {
-		// Remove the protocol command
-		args.erase(args.begin());
+        // Remove the protocol command
+        parsedData.erase(parsedData.begin());
+
+        std::string command = CommandProcessor::vecToString(parsedData);
+
+        std::string ip = getIP(connection);
+        std::string port = std::to_string(getPort(connection));
+        Logger::log(LogLevel::Debug, ip + ':' + port + " attempting to execute a command: '" + command + '\'');
 
         // Pass the rest of the arguments to the command processor
-        CommandProcessor::execute(args);
+        CommandProcessor::execute(connection, command);
     }
-    else if (args[0] == "SAY")
+    else if (parsedData[0] == "SAY")
     {
-        if (args.size() > 1)
+        if (parsedData.size() > 1)
         {
 
         }
         else
             Logger::log(LogLevel::Debug, "Invalid number of arguments");
     }
-    else if (args[0] == "SAY_ALL")
+    else if (parsedData[0] == "SAY_ALL")
     {
         std::string message;
 
-        for (u_long i = 0; i < args.size(); i++)
+        for (u_long i = 0; i < parsedData.size(); i++)
         {
-            if (i == args.size()) continue;
-            message += args[i] + ' ';
+            if (i == parsedData.size()) continue;
+            message += parsedData[i] + ' ';
         }
         broadcastData(std::move(connection), message);
     }

@@ -3,7 +3,6 @@
 
 int main(int argc, char **argv)
 {
-    Server server;
-    server.addModule<BFModule>();
-    return server.run(argc, argv);
+    Server::addModule<BFModule>();
+    return Server::run(argc, argv);
 }

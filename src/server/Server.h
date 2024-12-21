@@ -26,9 +26,12 @@ public signals:
     // Activated when a server module crashes
     static Signal<ServerModule> moduleCrashed;
 
+public slots:
+    static void stop();
+
 protected:
-    std::atomic<bool> m_Running;
-    bool m_Daemonized;
+    static bool m_Running;
+    static bool m_Daemonized;
 
 public:
     Server();
@@ -40,20 +43,17 @@ public:
     Server &operator=(const Server &) = delete;
     Server &operator=(Server &&) = delete;
 
-    // Run the server
-    int run(int argc, char **argv);
-
-    // Stops the server
-    void stop();
+    // Start and run the server
+    static int run(int argc, char **argv);
 
     // Returns true if the server is running
-    [[nodiscard]] bool isRunning() const { return m_Running; }
+    [[nodiscard]] static bool isRunning() { return m_Running; }
 
     // Returns true if the server is daemonized
-    [[nodiscard]] bool isDaemonized() const { return m_Daemonized; }
+    [[nodiscard]] static bool isDaemonized() { return m_Daemonized; }
 
     // Returns the current working directory
-    [[nodiscard]] std::string workingDirectory() const;
+    [[nodiscard]] static std::string workingDirectory();
 
     // Add a server module
     template<typename T, typename... Args>

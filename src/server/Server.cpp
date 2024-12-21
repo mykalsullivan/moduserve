@@ -10,6 +10,10 @@
 #include <getopt.h>
 #include <filesystem>
 
+#include "modules/commandprocessor/CommandProcessor.h"
+#include "commands/server/HelpCommand.h"
+#include "commands/server/StopCommand.h"
+
 // Forward declaration(s)
 void printUsage()
 {
@@ -25,7 +29,8 @@ std::condition_variable g_ServerCV;
 
 int init(int, char **);
 
-Server::Server() : m_Running(false), m_Daemonized(false) {}
+bool Server::m_Running = false;
+bool Server::m_Daemonized = false;
 
 int init(int argc, char **argv)
 {
@@ -64,8 +69,13 @@ int init(int argc, char **argv)
     // 8. Add and initialize built-in modules
     ModuleManager::instance().registerModule<Logger>();
     ModuleManager::instance().registerModule<NetworkEngine>(port);
+    ModuleManager::instance().registerModule<CommandProcessor>();
     ModuleManager::instance().initializeModules();
     ModuleManager::instance().startBackgroundServices();
+
+    // 9. For lack of a better place to put this for now, register built-in commands
+    CommandProcessor::registerCommand(std::make_shared<StopCommand>());
+    CommandProcessor::registerCommand(std::make_shared<HelpCommand>());
     return 0;
 }
 
@@ -77,7 +87,7 @@ int Server::run(int argc, char **argv)
     m_Running = true;
 
     std::unique_lock lock(g_ServerMutex);
-    g_ServerCV.wait(lock, [this]
+    g_ServerCV.wait(lock, []
     {
         return !m_Running;
     });
